@@ -1,6 +1,6 @@
 name: kyc_verification
 description: "A reusable KYC verification Flutter package"
-version: 0.0.2
+version: 0.0.1
 
 homepage: https://github.com/gayathribalraj/kyc_package
 repository: https://github.com/gayathribalraj/kyc_package
@@ -27,7 +27,7 @@ dev_dependencies:
 
 flutter:
  # Example for asset usage (uncomment if needed)
-  assets:
-    - assets/kyc_behavior.png
+  # assets:
+  #   - assets/data/voter_validation.json
 
 

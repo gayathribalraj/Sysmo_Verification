@@ -277,13 +277,14 @@ import 'package:kyc_verification/kyc_validation.dart';
 ```
 ## Supported KYC Types & Behavior
 
-![KYC Package Banner](assets/kyc_behavior.png)
 
-- Aadhaar	: Aadhaar Number	OTP-based	Shows OTP screen after initial validation
-- PAN	: PAN Number	Instant verify	Single request → instant result
-- Voter ID : 	Voter Number	Instant verify	Single request → instant result
-- GST	: GST Number	Instant verify	Single request → instant result
-- Passport: Passport Number	Instant verify	Single request → instant result
+| KYC Type  | Input Field     | Flow Type      | Notes                                     |
+|-----------|-----------------|----------------|-------------------------------------------|
+| Aadhaar   | Aadhaar Number  | OTP-based      | Shows OTP screen after initial validation |
+| PAN       | PAN Number      | Instant verify | Single request → instant result           |
+| Voter ID  | Voter Number    | Instant verify | Single request → instant result           |
+| GST       | GST Number      | Instant verify | Single request → instant result           |
+| Passport  | Passport Number | Instant verify | Single request → instant result           |
 
 
 ## Props / Configuration
