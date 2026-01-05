@@ -26,8 +26,6 @@ export 'package:dio/src/response.dart';
 export 'dart:convert';
 export 'package:sysmo_verification/kyc_validation.dart';
 export 'src/Utils/service.dart';
-// ignore: depend_on_referenced_packages
-export 'package:flutter_test/flutter_test.dart';
 export 'src/core/api/constant_variable.dart';
 
 
