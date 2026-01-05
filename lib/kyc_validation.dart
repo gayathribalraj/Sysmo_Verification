@@ -4,7 +4,6 @@ export 'src/core/verification_handlers.dart';
 export 'src/core/api/api_client.dart';
 export 'src/core/api/api_config.dart';
 export 'src/core/api/offline_verification_handler.dart';
-export 'src/core/api/app_constant.dart';
 export 'src/widget/uiwidgetprops/kyc_input_field.dart';
 export 'src/widget/uiwidgetprops/verify_button.dart';
 export 'src/widget/uiwidgetprops/otp_sheet.dart';
@@ -27,6 +26,8 @@ export 'package:dio/src/response.dart';
 export 'dart:convert';
 export 'package:sysmo_verification/kyc_validation.dart';
 export 'src/Utils/service.dart';
+export 'package:flutter_test/flutter_test.dart';
+export 'src/core/api/constant_variable.dart';
 
 
 

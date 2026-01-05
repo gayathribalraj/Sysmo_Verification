@@ -17,7 +17,7 @@ class OfflineVerificationHandler {
         requestOptions: RequestOptions(path: assetPath),
       );
     } catch (e) {
-      throw Exception('Failed to load offline data from $assetPath: $e');
+      throw Exception('${ConstantVariable.offlineHandlerloadString} $assetPath: $e');
     }
   }
 }

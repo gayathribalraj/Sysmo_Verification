@@ -14,7 +14,7 @@ class KYCService extends KycVerification{
       } else if (!isOffline && url!.isNotEmpty) {
         return await verifyOnline(url);
       } else {
-        throw Exception('No data source provided');
+        throw Exception(ConstantVariable.noDataProviderString);
       }
     } catch (error) {
       throw Exception(error.toString);

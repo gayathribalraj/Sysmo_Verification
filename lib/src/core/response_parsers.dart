@@ -20,8 +20,8 @@ class VoterResponseParser implements ResponseParser {
   @override
   bool parseOnlineResponse(dynamic responseData) {
     try {
-      return responseData['status'] == 'SUCCESS' &&
-          responseData['responseCode'] == '200';
+      return responseData[ConstantVariable.status] == ConstantVariable.camelSuccess &&
+          responseData[ConstantVariable.responseCode] == ConstantVariable.statusCode200;
     } catch (e) {
       return false;
     }
@@ -30,10 +30,10 @@ class VoterResponseParser implements ResponseParser {
   @override
   bool parseOfflineResponse(dynamic responseData) {
     try {
-      final decodedResponse = jsonDecode(responseData['RESPONSE']);
-      final status = decodedResponse['ursh']?['status']?.toString().toUpperCase();
-      final responseCode = decodedResponse['ursh']?['responseCode']?.toString();
-      return status == 'SUCCESS' && responseCode == '200';
+      final decodedResponse = jsonDecode(responseData[ConstantVariable.capitalResponse]);
+      final status = decodedResponse['ursh']?[ConstantVariable.status]?.toString().toUpperCase();
+      final responseCode = decodedResponse['ursh']?[ConstantVariable.responseCode]?.toString();
+      return status == ConstantVariable.camelSuccess && responseCode == ConstantVariable.statusCode200;
     } catch (e) {
       return false;
     }
@@ -45,8 +45,8 @@ class PanResponseParser implements ResponseParser {
   @override
   bool parseOnlineResponse(dynamic responseData) {
     try {
-      return responseData['status'] == 'SUCCESS' &&
-          responseData['responseCode'] == '200';
+      return responseData[ConstantVariable.status] == ConstantVariable.camelSuccess &&
+          responseData[ConstantVariable.responseCode] == ConstantVariable.statusCode200;
     } catch (e) {
       return false;
     }
@@ -58,7 +58,7 @@ class PanResponseParser implements ResponseParser {
       final panValidation = responseData["PanValidation"];
       return responseData["Success"] == true &&
           panValidation != null &&
-          panValidation["success"] == true;
+          panValidation[ConstantVariable.lowerSuccess] == true;
     } catch (e) {
       return false;
     }
@@ -71,8 +71,8 @@ class GstResponseParser implements ResponseParser {
   bool parseOnlineResponse(dynamic responseData) {
     try {
       final gstResp = responseData["gstResp"];
-      final statusCode = gstResp?["responseData"]?["status_code"]?.toString();
-      return gstResp?["success"] == true && statusCode == "101";
+      final statusCode = gstResp?[ConstantVariable.responseData]?["status_code"]?.toString();
+      return gstResp?[ConstantVariable.lowerSuccess] == true && statusCode == ConstantVariable.statusCode101;
     } catch (e) {
       return false;
     }
@@ -88,8 +88,8 @@ class PassportResponseParser implements ResponseParser {
   bool parseOnlineResponse(dynamic responseData) {
     try {
       final passportResp = responseData["passportResp"];
-      final statusCode = passportResp?["responseData"]?["status_code"]?.toString();
-      return passportResp?["success"] == true && statusCode == "101";
+      final statusCode = passportResp?[ConstantVariable.responseData]?["status_code"]?.toString();
+      return passportResp?[ConstantVariable.lowerSuccess] == true && statusCode == ConstantVariable.statusCode101;
     } catch (e) {
       return false;
     }

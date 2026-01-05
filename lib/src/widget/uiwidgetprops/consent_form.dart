@@ -74,7 +74,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                   Text('I Agree terms & condition'),
                 ],
               ),
-              widget.aadhaarmethod == 'otp'
+              widget.aadhaarmethod == ConstantVariable.consentOTPString
                   ? ElevatedButton(
                       onPressed: () async {
                         if (isChecked == true) {
@@ -96,7 +96,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                           if (response.toString().isNotEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("OTP Send Successfully!!!"),
+                                content: Text(ConstantVariable.consentOTPSendSuccessfullyString),
                               ),
                             );
                             await Future.delayed(const Duration(seconds: 2));
@@ -114,7 +114,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                             debugPrint("final OTPSheet Data $optionOTPSheet");
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("OTP Generate failed!!!")),
+                              SnackBar(content: Text(ConstantVariable.consentOTPGendrateFailedString)),
                             );
                           }
 
@@ -127,11 +127,11 @@ class _ConsoultFormState extends State<ConsentForm> {
                               height: 22,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Text('OTP Verification'),
+                          : Text(ConstantVariable.consentOTPVerificationString),
                     )
                   : ElevatedButton(
                       onPressed: () async {},
-                      child: Text('Bio-Metric'),
+                      child: Text(ConstantVariable.consentBioMetricString),
                     ),
             ],
           ),

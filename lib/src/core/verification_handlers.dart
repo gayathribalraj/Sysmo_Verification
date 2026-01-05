@@ -26,7 +26,7 @@ abstract class VerificationHandler {
     } else if (!isOffline && url != null && url.isNotEmpty) {
       return await verifyOnline(url, request: request);
     } else {
-      throw Exception('No valid data source provided for verification');
+      throw Exception(ConstantVariable.noDataProviderString);
     }
   }
 }

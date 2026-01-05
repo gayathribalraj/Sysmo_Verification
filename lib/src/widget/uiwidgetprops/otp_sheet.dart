@@ -68,7 +68,7 @@ class _OtpSheetState extends State<OtpSheet> {
       isLoading.value = false;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('OTP verification failed: $e')),
+          SnackBar(content: Text('${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}: $e')),
         );
       }
     }
@@ -124,7 +124,7 @@ class _OtpSheetState extends State<OtpSheet> {
                         color: Colors.white,
                         strokeWidth: 2,
                       )
-                    : const Text("Verify OTP");
+                    : const Text(ConstantVariable.verifyOTPString);
               },
             ),
           ),
@@ -170,14 +170,14 @@ Future showValidateOptions(BuildContext context) async {
           children: [
             ListTile(
               leading: Icon(Icons.qr_code_scanner),
-              title: Text('Biometric'),
+              title: Text(ConstantVariable.consentBioMetricString),
               onTap: () {
                 Navigator.pop(context, 'bio');
               },
             ),
             ListTile(
               leading: Icon(Icons.text_fields),
-              title: Text('OTP'),
+              title: Text(ConstantVariable.otpString),
               onTap: () {
                 Navigator.pop(context, 'otp');
               },
