@@ -16,7 +16,15 @@ class KYCTextBox extends StatefulWidget {
   final ButtonProps buttonProps;
   final bool isOffline;
   final String? assetPath;
-  final String apiUrl;
+  final String? otpGendrateassetPath;
+  final String otpGendraassetApiurl;
+  final String aadhaarResponseassetspath;
+  final String aadhaarResponseApiurl;
+  final String aadharvaultassetpath;
+  final String aadharvaultApiurl;
+  final String aadharvaultlookupassetpath;
+  final String aadharvaultlookupapiurl;
+  final String? apiUrl;
   final ValueChanged<dynamic> onSuccess;
   final ValueChanged<dynamic> onError;
   final Key? fieldKey;
@@ -39,11 +47,19 @@ class KYCTextBox extends StatefulWidget {
     this.assetPath,
     required this.onSuccess,
     required this.onError,
-    required this.apiUrl,
+    this.apiUrl,
     required this.verificationType,
     this.kycNumber,
     this.validationPatternErrorMessage,
     required this.validationPattern,
+    this.otpGendrateassetPath,
+    required this.otpGendraassetApiurl,
+    required this.aadhaarResponseassetspath,
+    required this.aadhaarResponseApiurl,
+    required this.aadharvaultassetpath,
+    required this.aadharvaultApiurl,
+    required this.aadharvaultlookupassetpath,
+    required this.aadharvaultlookupapiurl,
   });
 
   @override
@@ -61,6 +77,11 @@ class _KYCTextBoxState extends State<KYCTextBox> {
   late ResponseParser _responseParser;
 
   String _currentInput = '';
+  
+  // Aadhaar verification state flags
+  bool otpVerified = false;
+  bool otpVrfy = true;
+  String? aadhaarRefNumber;
 
   @override
   void initState() {
@@ -73,8 +94,6 @@ class _KYCTextBoxState extends State<KYCTextBox> {
   void _initializeManagers() {
     _buttonStateManager = ButtonStateManager();
     _inputValidator = InputValidationManager();
-
-   
 
     // Initialize button with label or "verified" state if kycNumber exists
     if (widget.kycNumber != null && widget.kycNumber!.isNotEmpty) {
@@ -155,12 +174,19 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
       if (_responseParser.parseOfflineResponse(response.data) ||
           _responseParser.parseOnlineResponse(response.data)) {
-        _handleVerificationSuccess('Voter ID ${ConstantVariable.verifiedSuccessfullyString}', response);
+        _handleVerificationSuccess(
+          'Voter ID ${ConstantVariable.verifiedSuccessfullyString}',
+          response,
+        );
       } else {
-        _handleVerificationError('Voter ID ${ConstantVariable.verificationFaildString}');
+        _handleVerificationError(
+          'Voter ID ${ConstantVariable.verificationFaildString}',
+        );
       }
     } catch (e) {
-      _handleVerificationError('Voter ${ConstantVariable.verificationFaildString}');
+      _handleVerificationError(
+        'Voter ${ConstantVariable.verificationFaildString}',
+      );
     }
   }
 
@@ -180,12 +206,19 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
       if (_responseParser.parseOfflineResponse(response.data) ||
           _responseParser.parseOnlineResponse(response.data)) {
-        _handleVerificationSuccess('Pan ID ${ConstantVariable.verifiedSuccessfullyString}', response);
+        _handleVerificationSuccess(
+          'Pan ID ${ConstantVariable.verifiedSuccessfullyString}',
+          response,
+        );
       } else {
-        _handleVerificationError('PAN ${ConstantVariable.verificationFaildString}');
+        _handleVerificationError(
+          'PAN ${ConstantVariable.verificationFaildString}',
+        );
       }
     } catch (e) {
-      _handleVerificationError('PAN ${ConstantVariable.verificationFaildString}');
+      _handleVerificationError(
+        'PAN ${ConstantVariable.verificationFaildString}',
+      );
     }
   }
 
@@ -202,12 +235,19 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
       if (_responseParser.parseOfflineResponse(response.data) ||
           _responseParser.parseOnlineResponse(response.data)) {
-        _handleVerificationSuccess('GST ${ConstantVariable.verifiedSuccessfullyString}', response);
+        _handleVerificationSuccess(
+          'GST ${ConstantVariable.verifiedSuccessfullyString}',
+          response,
+        );
       } else {
-        _handleVerificationError('GST ${ConstantVariable.verificationFaildString}');
+        _handleVerificationError(
+          'GST ${ConstantVariable.verificationFaildString}',
+        );
       }
     } catch (e) {
-      _handleVerificationError('GST ${ConstantVariable.verificationFaildString}');
+      _handleVerificationError(
+        'GST ${ConstantVariable.verificationFaildString}',
+      );
     }
   }
 
@@ -224,12 +264,19 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
       if (_responseParser.parseOfflineResponse(response.data) ||
           _responseParser.parseOnlineResponse(response.data)) {
-        _handleVerificationSuccess('Passport ${ConstantVariable.verifiedSuccessfullyString}', response);
+        _handleVerificationSuccess(
+          'Passport ${ConstantVariable.verifiedSuccessfullyString}',
+          response,
+        );
       } else {
-        _handleVerificationError('Passport ${ConstantVariable.verificationFaildString}');
+        _handleVerificationError(
+          'Passport ${ConstantVariable.verificationFaildString}',
+        );
       }
     } catch (e) {
-      _handleVerificationError('Passport ${ConstantVariable.verificationFaildString}');
+      _handleVerificationError(
+        'Passport ${ConstantVariable.verificationFaildString}',
+      );
     }
   }
 
@@ -249,23 +296,347 @@ class _KYCTextBoxState extends State<KYCTextBox> {
           builder: (_) => ConsentForm(
             aadhaarNumber: _currentInput,
             aadhaarmethod: methodType,
-            assetPath: widget.assetPath ?? '',
-            url: widget.apiUrl,
+            assetPath: widget.otpGendrateassetPath ?? '',
+            url: widget.otpGendraassetApiurl,
+            aadhaarResponseassetspath: widget.aadhaarResponseassetspath,
+            aadhaarResponseApiurl: widget.aadhaarResponseApiurl,
+            leadId: '323234434334',
+            token: '',
           ),
         ),
       );
 
-      if (consentResponse?.data['Success'] == true) {
-        _handleVerificationSuccess(
-          'Aadhaar ID ${ConstantVariable.verifiedSuccessfullyString}',
-          consentResponse,
-        );
+      // Check OTP validation response
+      if (consentResponse != null && consentResponse.data != null) {
+        final responseData = consentResponse.data;
+        final otpValidation = responseData['otpValidationNew'];
+
+        if (otpValidation != null &&
+            otpValidation['ErrorCode'] == '000' &&
+            otpValidation['Status'] == 'Y') {
+          
+          debugPrint("OTP Verification SUCCESS");
+          await handleOtpSuccessAndVault(otpValidation, consentResponse);
+        } else {
+          final errorStatus =
+              otpValidation?['ErrorStatus'] ?? 'Aadhaar verification failed';
+          final errorCode = otpValidation?['ErrorCode'] ?? 'Unknown error';
+
+          debugPrint("Aadhaar Verification Failed");
+          debugPrint("ErrorCode: $errorCode");
+          debugPrint("ErrorStatus: $errorStatus");
+
+          _handleVerificationError(
+            'Aadhaar ID ${ConstantVariable.verificationFaildString}',
+          );
+        }
       } else {
-        _handleVerificationError('Aadhaar ID ${ConstantVariable.verificationFaildString}');
+        _handleVerificationError(
+          'Aadhaar ID ${ConstantVariable.verificationFaildString}',
+        );
       }
     } catch (e) {
-      _handleVerificationError('Aadhaar ${ConstantVariable.verificationFaildString}');
+      debugPrint('Aadhaar Verification Error: $e');
+      _handleVerificationError(
+        'Aadhaar ${ConstantVariable.verificationFaildString}',
+      );
     }
+  }
+
+  
+  Future<void> handleOtpSuccessAndVault(
+    Map<String, dynamic> otpValidation,
+    Response otpResponse,
+  ) async {
+    try {
+      setState(() {
+        _buttonStateManager.setLoading();
+      });
+
+      final kycDetails = otpValidation['KycDetails'];
+      final transactionId = otpValidation['TransactionId'];
+      final refNumFromOtp = otpValidation['aadharRefNum'];
+
+      debugPrint(" OTP SUCCESS HANDLER");
+      debugPrint("TransactionId: $transactionId");
+      debugPrint("Name: ${kycDetails?['name']}");
+      debugPrint("aadharRefNum from OTP: $refNumFromOtp");
+
+      // SCENARIO 1: Check if aadharRefNum already exists in OTP response
+      if (refNumFromOtp != null && refNumFromOtp.toString().isNotEmpty) {
+        debugPrint(" aadharRefNum found in OTP response");
+        debugPrint("RefNum: $refNumFromOtp");
+
+        // Mark as verified and store reference number
+        aadhaarRefNumber = refNumFromOtp.toString();
+        otpVerified = true;
+        otpVrfy = false;
+
+        debugPrint(" otpVerified = true");
+        debugPrint(" otpVrfy = false");
+        debugPrint(" aadhaarRefNumber = $aadhaarRefNumber");
+
+        _handleVaultVerificationSuccess(otpValidation, {}, aadhaarRefNumber!);
+      } else {
+        // aadharRefNum not in OTP response, call Vault Lookup
+        debugPrint(" aadharRefNum NOT found in OTP response");
+        debugPrint(" Calling Vault Lookup API...");
+
+        await aadharVaultLookup(_currentInput, '323234434334', otpValidation);
+      }
+    } catch (e) {
+      debugPrint(' handleOtpSuccessAndVault Error: $e');
+      _handleVerificationError(
+        'Aadhaar ${ConstantVariable.verificationFaildString}',
+      );
+    } finally {
+      // Only reset button if verification was not successful
+      if (!otpVerified) {
+        setState(() {
+          _buttonStateManager.reset(widget.buttonProps.label);
+        });
+      }
+    }
+  }
+
+  /// Aadhaar Vault Lookup API call
+  ///
+  /// SCENARIO 1: If errorCode == "000" and aadharRefNum exists
+  ///   -> Set otpVerified = true, otpVrfy = false
+  ///   -> Store aadhaarRefNumber
+  ///
+  /// SCENARIO 2: If errorCode == "2"
+  ///   -> Call triggerAadharVault()
+  Future<void> aadharVaultLookup(
+    String aadhaarNumber,
+    String leadId,
+    Map<String, dynamic> otpValidation,
+  ) async {
+    try {
+      debugPrint(" VAULT LOOKUP");
+      debugPrint("aadhaarNumber: $aadhaarNumber");
+      debugPrint("leadId: $leadId");
+
+      // Build Vault Lookup request
+      final vaultLookupRequest = {
+        'aadharNumber': aadhaarNumber,
+        'uniqueId': leadId,
+        'token': '',
+      };
+
+      debugPrint(" Request: $vaultLookupRequest");
+
+      // Call Vault Lookup API
+      final vaultLookupResponse = await _verificationHandler.verify(
+        isOffline: widget.isOffline,
+        url: widget.aadharvaultlookupapiurl,
+        assetPath: widget.aadharvaultlookupassetpath,
+        request: vaultLookupRequest,
+      );
+
+      debugPrint(" Response Status: ${vaultLookupResponse.statusCode}");
+
+      if (vaultLookupResponse.data != null) {
+        final vaultData = vaultLookupResponse.data;
+        final vaultLookup = vaultData is Map 
+            ? (vaultData['VaultLoolUp'] ?? vaultData) 
+            : vaultData;
+
+        // Extract response fields
+        final errorCode = vaultLookup is Map 
+            ? (vaultLookup['errorCode'] ??
+                vaultLookup['ErrorCode'] ??
+                vaultLookup['error_code']) 
+            : null;
+        final refNum = vaultLookup is Map 
+            ? vaultLookup['aadharRefNum'] 
+            : null;
+
+        debugPrint(" Vault Lookup Response:");
+        debugPrint("   ErrorCode: $errorCode");
+        debugPrint("   aadharRefNum: $refNum");
+
+        if (errorCode == null) {
+          throw Exception('No errorCode in Vault Lookup response');
+        }
+
+        // SCENARIO 1: errorCode == "000" and aadharRefNum exists
+        if ((errorCode == '000' || errorCode == 0) && refNum != null) {
+          debugPrint("  Vault Lookup Success");
+          debugPrint("   ErrorCode: 000");
+          debugPrint("   aadharRefNum: $refNum");
+
+          aadhaarRefNumber = refNum.toString();
+          otpVerified = true;
+          otpVrfy = false;
+
+          debugPrint(" otpVerified = true");
+          debugPrint(" otpVrfy = false");
+          debugPrint(" aadhaarRefNumber = $aadhaarRefNumber");
+
+          _handleVaultVerificationSuccess(
+            otpValidation,
+            vaultLookup is Map<String, dynamic> ? vaultLookup : {},
+            aadhaarRefNumber!,
+          );
+        }
+        // SCENARIO 2: errorCode == "2"
+        else if (errorCode == '2' || errorCode == 2) {
+          debugPrint(" ErrorCode 2 - Triggering Aadhaar Vault");
+          debugPrint("   Calling triggerAadharVault()...");
+
+          await triggerAadharVault(
+            aadhaarNumber,
+            leadId,
+            otpValidation,
+          );
+        } else {
+          throw Exception('Vault Lookup failed with errorCode: $errorCode');
+        }
+      } else {
+        throw Exception(
+            'Vault Lookup returned null data. Status: ${vaultLookupResponse.statusCode}');
+      }
+    } catch (e) {
+      debugPrint(' aadharVaultLookup Error: $e');
+      _handleVerificationError(
+        'Aadhaar ${ConstantVariable.verificationFaildString}',
+      );
+    } finally {
+      // Only reset button if verification was not successful
+      if (!otpVerified) {
+        setState(() {
+          _buttonStateManager.reset(widget.buttonProps.label);
+        });
+      }
+    }
+  }
+
+  /// Trigger Aadhaar Vault API when Vault Lookup returns errorCode == "2"
+  ///
+  /// If errorCode == "000" and aadharRefNum exists
+  ///   -> Set otpVerified = true, otpVrfy = false
+  ///   -> Store aadhaarRefNumber from Trigger response
+  Future<void> triggerAadharVault(
+    String aadhaarNumber,
+    String leadId,
+    Map<String, dynamic> otpValidation,
+  ) async {
+    try {
+      debugPrint(" TRIGGER AADHAAR VAULT");
+      debugPrint("aadhaarNumber: $aadhaarNumber");
+      debugPrint("leadId: $leadId");
+
+      // Build Trigger Aadhaar Vault request
+      final vaultRequest = {
+        'aadharNumber': aadhaarNumber,
+        'uniqueId': leadId,
+        'token': '',
+      };
+
+      debugPrint(" Request: $vaultRequest");
+
+      // Call Trigger Aadhaar Vault API
+      final vaultResponse = await _verificationHandler.verify(
+        isOffline: widget.isOffline,
+        url: widget.aadharvaultApiurl,
+        assetPath: widget.aadharvaultassetpath,
+        request: vaultRequest,
+      );
+
+      debugPrint(" Response Status: ${vaultResponse.statusCode}");
+
+      if (vaultResponse.data != null) {
+        final vaultData = vaultResponse.data;
+        final aadharVault = vaultData is Map 
+            ? (vaultData['AadharValut'] ?? vaultData) 
+            : vaultData;
+
+        // Extract response fields
+        final errorCode = aadharVault is Map 
+            ? (aadharVault['errorCode'] ??
+                aadharVault['ErrorCode'] ??
+                aadharVault['error_code']) 
+            : null;
+        final refNum = aadharVault is Map 
+            ? aadharVault['aadharRefNum'] 
+            : null;
+
+        debugPrint(" Aadhaar Vault Response:");
+        debugPrint("   ErrorCode: $errorCode");
+        debugPrint("   aadharRefNum: $refNum");
+
+        if (errorCode == null) {
+          throw Exception('No errorCode in Aadhaar Vault response');
+        }
+
+        // Check for success and aadharRefNum
+        if ((errorCode == '000' || errorCode == 0) && refNum != null) {
+          debugPrint(" TRIGGER SUCCESS");
+          debugPrint("   ErrorCode: 000");
+          debugPrint("   aadharRefNum: $refNum");
+
+          aadhaarRefNumber = refNum.toString();
+          otpVerified = true;
+          otpVrfy = false;
+
+          debugPrint(" otpVerified = true");
+          debugPrint(" otpVrfy = false");
+          debugPrint(" aadhaarRefNumber = $aadhaarRefNumber");
+
+          _handleVaultVerificationSuccess(
+            otpValidation,
+            aadharVault is Map<String, dynamic> ? aadharVault : {},
+            aadhaarRefNumber!,
+          );
+        } else {
+          throw Exception(
+              'Aadhaar Vault failed - ErrorCode: $errorCode, RefNum: $refNum');
+        }
+      } else {
+        throw Exception(
+            'Aadhaar Vault returned null data. Status: ${vaultResponse.statusCode}');
+      }
+    } catch (e) {
+      debugPrint(' triggerAadharVault Error: $e');
+      _handleVerificationError(
+        'Aadhaar ${ConstantVariable.verificationFaildString}',
+      );
+    } finally {
+      // Only reset button if verification was not successful
+      if (!otpVerified) {
+        setState(() {
+          _buttonStateManager.reset(widget.buttonProps.label);
+        });
+      }
+    }
+  }
+
+  /// Handle successful vault verification
+  void _handleVaultVerificationSuccess(
+    Map<String, dynamic> otpValidation,
+    Map<String, dynamic> vaultData,
+    String aadhaarRefNumber,
+  ) {
+    debugPrint("Aadhaar Verification SUCCESS");
+    debugPrint("Aadhaar Ref Number: $aadhaarRefNumber");
+    debugPrint("Vault Data: $vaultData");
+
+    // Create combined response
+    final finalResponse = Response(
+      requestOptions: RequestOptions(path: ''),
+      data: {
+        'otpValidation': otpValidation,
+        'vaultData': vaultData,
+        'aadhaarRefNumber': aadhaarRefNumber,
+      },
+      statusCode: 200,
+    );
+
+    _handleVerificationSuccess(
+      'Aadhaar ID ${ConstantVariable.verifiedSuccessfullyString}',
+      finalResponse,
+    );
   }
 
   /// Handle successful verification

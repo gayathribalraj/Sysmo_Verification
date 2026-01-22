@@ -11,12 +11,18 @@ class OtpSheet extends StatefulWidget {
   final String assetPath;
   final String url;
   final bool isOffline;
+  final String aadhaarNumber;
+  final String leadId;
+  final String token;
 
   const OtpSheet({
     super.key,
     required this.assetPath,
     required this.url,
     this.isOffline = true,
+    required this.aadhaarNumber,
+    required this.leadId,
+    required this.token,
   });
 
   @override
@@ -51,9 +57,17 @@ class _OtpSheetState extends State<OtpSheet> {
     try {
       await Future.delayed(const Duration(seconds: 1));
 
+      // Build OTP verification request
+      final requestBody = {
+        'otp': otpPin,
+        'uid': widget.aadhaarNumber,
+        'uniqueId': widget.leadId,
+        'token': widget.token
+      };
+
       final response = await KYCService().verify(
         isOffline: widget.isOffline,
-        request: otpPin,
+        request: jsonEncode(requestBody),
         assetPath: widget.assetPath,
         url: widget.url,
       );
@@ -61,14 +75,56 @@ class _OtpSheetState extends State<OtpSheet> {
       isLoading.value = false;
 
       if (mounted) {
-        Navigator.pop(context);
-        Navigator.pop(context, response);
+        // Parse otpValidationNew response
+        final responseData = response.data;
+        final otpValidation = responseData['otpValidationNew'];
+        debugPrint("OTP Validation Response Data: $responseData");
+        
+        if (otpValidation != null && 
+            otpValidation['ErrorCode'] == '000' && 
+            otpValidation['Status'] == 'Y') {
+          
+          final kycDetails = otpValidation['KycDetails'];
+          final transactionId = otpValidation['TransactionId'];
+         
+          
+          debugPrint(" OTP Verification Success");
+          debugPrint("TransactionId: $transactionId");
+          debugPrint("Name: ${kycDetails?['name']}");
+          debugPrint("KycDetails: $kycDetails");
+          
+          // Return response with KycDetails
+          if (mounted) {
+            Navigator.pop(context);
+            Navigator.pop(context, response);
+          }
+        } else {
+          final errorStatus = otpValidation?['ErrorStatus'] ?? 'OTP verification failed';
+          final errorCode = otpValidation?['ErrorCode'] ?? 'Unknown error';
+          
+          debugPrint(" OTP Verification Failed");
+          debugPrint("ErrorCode: $errorCode");
+          debugPrint("ErrorStatus: $errorStatus");
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('$errorStatus'),
+                backgroundColor: Colors.black,
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
       isLoading.value = false;
       if (mounted) {
+        debugPrint("OTP Verification Error: $e");
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}: $e')),
+          SnackBar(
+            content: Text('${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}: $e'),
+            duration: const Duration(seconds: 4),
+          ),
         );
       }
     }
@@ -78,7 +134,8 @@ class _OtpSheetState extends State<OtpSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+        bottom: MediaQuery.of(context).size.height * 0.35,
+
         top: 30,
         left: 20,
         right: 20,
@@ -139,7 +196,10 @@ class _OtpSheetState extends State<OtpSheet> {
 Future<dynamic> showOtpBottomSheet(
   BuildContext context,
   String assetPath,
-  String url, {
+  String url,
+  String aadhaarNumber,
+  String leadId,
+  dynamic cryptoService, {
   bool isOffline = true,
 }) async {
   return await showModalBottomSheet(
@@ -152,6 +212,9 @@ Future<dynamic> showOtpBottomSheet(
       assetPath: assetPath,
       url: url,
       isOffline: isOffline,
+      aadhaarNumber: aadhaarNumber,
+      leadId: leadId,
+      token: cryptoService,
     ),
   );
 }
@@ -165,7 +228,7 @@ Future showValidateOptions(BuildContext context) async {
     builder: (BuildContext context) {
       return Container(
         padding: EdgeInsets.all(16),
-        height: 180,
+        height: MediaQuery.of(context).size.height * 0.25,
         child: Column(
           children: [
             ListTile(

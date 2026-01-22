@@ -5,12 +5,20 @@ class ConsentForm extends StatefulWidget {
   final String aadhaarNumber;
   final String assetPath;
   final String url;
+  final String? aadhaarResponseassetspath;
+  final String? aadhaarResponseApiurl;
+  final String leadId;
+  final String token;
   const ConsentForm({
     super.key,
     required this.aadhaarmethod,
     required this.aadhaarNumber,
     required this.assetPath,
     required this.url,
+    this.aadhaarResponseassetspath,
+    this.aadhaarResponseApiurl,
+    required this.leadId,
+    required this.token,
   });
 
   @override
@@ -74,6 +82,9 @@ class _ConsoultFormState extends State<ConsentForm> {
                   Text('I Agree terms & condition'),
                 ],
               ),
+              
+              SizedBox(height: 20),
+              
               widget.aadhaarmethod == ConstantVariable.consentOTPString
                   ? ElevatedButton(
                       onPressed: () async {
@@ -81,44 +92,85 @@ class _ConsoultFormState extends State<ConsentForm> {
                           setState(() {
                             isLoading = true;
                           });
-                          final response = await KYCService().verify(
-                            isOffline: true,
-                            request: widget.aadhaarNumber,
-                            assetPath: 'assets/data/otpvalidation.json',
-                            url: '',
-                          );
-                          debugPrint("final OTPSheet Data $response");
-                          await Future.delayed(const Duration(seconds: 1));
-                          setState(() {
-                            isLoading = false;
-                          });
-
-                          if (response.toString().isNotEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(ConstantVariable.consentOTPSendSuccessfullyString),
-                              ),
+                          
+                          try {
+                            // Build OTP generation request
+                            final requestBody = {
+                              'aadharNumber': widget.aadhaarNumber,
+                              'uniqueId': widget.leadId,
+                              'token': widget.token
+                            };
+                            
+                            final response = await KYCService().verify(
+                              isOffline: widget.url.isEmpty,
+                              request: requestBody.toString(),
+                              assetPath: widget.assetPath,
+                              url: widget.url,
                             );
-                            await Future.delayed(const Duration(seconds: 2));
-
-                            final optionOTPSheet = await showOtpBottomSheet(
-                              context,
-                              widget.assetPath,
-                              widget.url,
-                            );
+                            
+                            debugPrint("OTP Generation Response: $response");
                             await Future.delayed(const Duration(seconds: 1));
 
+                            if (response.toString().isNotEmpty) {
+                              // Parse OtpGeneration response
+                              final responseData = response.data;
+                              final otpGeneration = responseData['OtpGeneration'];
+                              
+                              if (otpGeneration != null && otpGeneration['ErrorCode'] == '000') {
+                                final transactionId = otpGeneration['transactionId'];
+                                debugPrint("OTP Generation Success - TransactionId: $transactionId");
+                                
+                                setState(() {
+                                  isLoading = false;
+                                });
+                                
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(ConstantVariable.consentOTPSendSuccessfullyString),
+                                  ),
+                                );
+                                await Future.delayed(const Duration(seconds: 2));
+
+                                final optionOTPSheet = await showOtpBottomSheet(
+                                  context,
+                                  widget.aadhaarResponseassetspath!,
+                                  widget.aadhaarResponseApiurl!,
+                                  widget.aadhaarNumber,
+                                  widget.leadId,
+                                  widget.token
+                                );
+                                await Future.delayed(const Duration(seconds: 1));
+
+                                debugPrint("OTP Verification Response: $optionOTPSheet");
+                              } else {
+                                setState(() {
+                                  isLoading = false;
+                                });
+                                
+                                final errorStatus = otpGeneration?['ErrorStatus'] ?? ConstantVariable.consentOTPGendrateFailedString;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(errorStatus),
+                                  ),
+                                );
+                              }
+                            } else {
+                              setState(() {
+                                isLoading = false;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(ConstantVariable.consentOTPGendrateFailedString)),
+                              );
+                            }
+                          } catch (error) {
                             setState(() {
                               isLoading = false;
                             });
-                            debugPrint("final OTPSheet Data $optionOTPSheet");
-                          } else {
+                            debugPrint("OTP Generation Error: $error");
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(ConstantVariable.consentOTPGendrateFailedString)),
+                              SnackBar(content: Text('Error: ${error.toString()}')),
                             );
                           }
-
-                          // Navigator.pop(context);
                         }
                       },
                       child: isLoading
