@@ -40,7 +40,7 @@ The package provides a unified approach to document verification with consistent
 
 ```yaml
 dependencies:
-  sysmo_verification: ^0.0.3
+  sysmo_verification: ^0.0.4
 
   # For local development:
   # sysmo_verification:
