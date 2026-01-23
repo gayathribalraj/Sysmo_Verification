@@ -668,8 +668,9 @@ class _KYCTextBoxState extends State<KYCTextBox> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
+          Flexible(
             child: KYCInputField(
               formProps: widget.formProps,
               styleProps: widget.styleProps,
@@ -685,7 +686,7 @@ class _KYCTextBoxState extends State<KYCTextBox> {
               },
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 16),
           VerifyButton(
             stateManager: _buttonStateManager,
             buttonProps: widget.buttonProps,

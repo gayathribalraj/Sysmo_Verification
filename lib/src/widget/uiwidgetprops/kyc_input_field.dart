@@ -31,66 +31,71 @@ class KYCInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        IgnorePointer(
-          ignoring: disabled,
-          child: ReactiveTextField<String>(
-            autofocus: false,
-            keyboardType: keyboardType,
-            formControlName: formProps.formControlName,
-            onChanged: onChange,
-            maxLength: formProps.maxLength,
-            style: styleProps.textStyle ?? const TextStyle(fontSize: 14),
-            decoration: styleProps.inputDecoration ??
-                InputDecoration(
-                  label: RichText(
-                    text: TextSpan(
-                      text: formProps.label,
-                      style: styleProps.textStyle ??
-                          const TextStyle(color: Colors.black, fontSize: 18),
-                      children: [
-                        TextSpan(
-                          text: formProps.mandatory ? ' *' : '',
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ],
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IgnorePointer(
+            ignoring: disabled,
+            child: ReactiveTextField<String>(
+              autofocus: false,
+              keyboardType: keyboardType,
+              formControlName: formProps.formControlName,
+              onChanged: onChange,
+              maxLength: formProps.maxLength,
+              style: styleProps.textStyle ?? const TextStyle(fontSize: 14),
+              decoration: styleProps.inputDecoration ??
+                  InputDecoration(
+                    label: RichText(
+                      text: TextSpan(
+                        text: formProps.label,
+                        style: styleProps.textStyle ??
+                            const TextStyle(color: Colors.black, fontSize: 18),
+                        children: [
+                          TextSpan(
+                            text: formProps.mandatory ? ' *' : '',
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ],
+                      ),
                     ),
+                    errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
                   ),
-                  errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
-                ),
-            validationMessages: formProps.validator != null
-                ? {
-                    '': (control) {
-                      final abstractControl = control as AbstractControl<dynamic>;
-                      return formProps.validator!(abstractControl);
-                    },
-                  }
-                : null,
+              validationMessages: formProps.validator != null
+                  ? {
+                      '': (control) {
+                        final abstractControl = control as AbstractControl<dynamic>;
+                        return formProps.validator!(abstractControl);
+                      },
+                    }
+                  : null,
+            ),
           ),
-        ),
-        ReactiveFormConsumer(
-          builder: (context, form, child) {
-            final control = form.control(formProps.formControlName);
-            final currentValue = control.value ?? '';
-            final isPatternInvalid = validationPattern != null &&
-                currentValue.isNotEmpty &&
-                !validationPattern!.hasMatch(currentValue);
-
-            if (isPatternInvalid && validationPatternErrorMessage != null) {
-              return Padding(
-                padding: const EdgeInsets.only(top: 4, left: 4),
-                child: Text(
-                  validationPatternErrorMessage!,
-                  style: const TextStyle(color: Colors.red, fontSize: 12),
-                ),
-              );
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-      ],
+          ReactiveFormConsumer(
+            builder: (context, form, child) {
+              final control = form.control(formProps.formControlName);
+              final currentValue = control.value ?? '';
+              final isPatternInvalid = validationPattern != null &&
+                  currentValue.isNotEmpty &&
+                  !validationPattern!.hasMatch(currentValue);
+      
+              if (isPatternInvalid && validationPatternErrorMessage != null) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 4),
+                  child: Text(
+                    validationPatternErrorMessage!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
     );
   }
 }
