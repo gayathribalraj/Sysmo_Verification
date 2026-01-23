@@ -10,7 +10,7 @@ import 'package:sysmo_verification/kyc_validation.dart';
 class OtpSheet extends StatefulWidget {
   final String assetPath;
   final String url;
-  final bool isOffline;
+  final dynamic isOffline;
   final String aadhaarNumber;
   final String leadId;
   final String token;
@@ -19,7 +19,7 @@ class OtpSheet extends StatefulWidget {
     super.key,
     required this.assetPath,
     required this.url,
-    this.isOffline = true,
+    this.isOffline ,
     required this.aadhaarNumber,
     required this.leadId,
     required this.token,
@@ -200,7 +200,7 @@ Future<dynamic> showOtpBottomSheet(
   String aadhaarNumber,
   String leadId,
   dynamic cryptoService, {
-  bool isOffline = true,
+  dynamic isOffline
 }) async {
   return await showModalBottomSheet(
     context: context,

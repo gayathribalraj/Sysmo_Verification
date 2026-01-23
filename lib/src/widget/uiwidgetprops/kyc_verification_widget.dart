@@ -34,6 +34,8 @@ class KYCTextBox extends StatefulWidget {
   final bool showVerifyButton;
   final String? validationPatternErrorMessage;
   final RegExp? validationPattern;
+  final String token ;
+  final String leadId;
 
   const KYCTextBox({
     super.key,
@@ -60,6 +62,8 @@ class KYCTextBox extends StatefulWidget {
     required this.aadharvaultApiurl,
     required this.aadharvaultlookupassetpath,
     required this.aadharvaultlookupapiurl,
+    required this.leadId,
+    required this.token
   });
 
   @override
@@ -300,8 +304,10 @@ class _KYCTextBoxState extends State<KYCTextBox> {
             url: widget.otpGendraassetApiurl,
             aadhaarResponseassetspath: widget.aadhaarResponseassetspath,
             aadhaarResponseApiurl: widget.aadhaarResponseApiurl,
-            leadId: '323234434334',
-            token: '',
+            leadId:widget.leadId ,
+            token: widget.token, 
+            isOffline: widget.isOffline,
+            
           ),
         ),
       );
@@ -409,19 +415,19 @@ class _KYCTextBoxState extends State<KYCTextBox> {
   ///   -> Call triggerAadharVault()
   Future<void> aadharVaultLookup(
     String aadhaarNumber,
-    String leadId,
+    String leadId ,
     Map<String, dynamic> otpValidation,
   ) async {
     try {
       debugPrint(" VAULT LOOKUP");
       debugPrint("aadhaarNumber: $aadhaarNumber");
-      debugPrint("leadId: $leadId");
+      debugPrint("leadId: $widget.leadId");
 
       // Build Vault Lookup request
       final vaultLookupRequest = {
         'aadharNumber': aadhaarNumber,
-        'uniqueId': leadId,
-        'token': '',
+        'uniqueId': widget.leadId,
+        'token': widget.token,
       };
 
       debugPrint(" Request: $vaultLookupRequest");
@@ -487,7 +493,7 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
           await triggerAadharVault(
             aadhaarNumber,
-            leadId,
+            widget.leadId,
             otpValidation,
           );
         } else {
@@ -530,8 +536,8 @@ class _KYCTextBoxState extends State<KYCTextBox> {
       // Build Trigger Aadhaar Vault request
       final vaultRequest = {
         'aadharNumber': aadhaarNumber,
-        'uniqueId': leadId,
-        'token': '',
+        'uniqueId': widget.leadId,
+        'token': widget.token,
       };
 
       debugPrint(" Request: $vaultRequest");

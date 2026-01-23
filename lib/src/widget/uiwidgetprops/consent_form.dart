@@ -9,6 +9,7 @@ class ConsentForm extends StatefulWidget {
   final String? aadhaarResponseApiurl;
   final String leadId;
   final String token;
+  final bool isOffline;
   const ConsentForm({
     super.key,
     required this.aadhaarmethod,
@@ -19,6 +20,7 @@ class ConsentForm extends StatefulWidget {
     this.aadhaarResponseApiurl,
     required this.leadId,
     required this.token,
+    required this.isOffline
   });
 
   @override
@@ -106,7 +108,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                               };
                               
                               final response = await KYCService().verify(
-                                isOffline: widget.url.isEmpty,
+                                isOffline: widget.isOffline,
                                 request: requestBody.toString(),
                                 assetPath: widget.assetPath,
                                 url: widget.url,
@@ -141,7 +143,8 @@ class _ConsoultFormState extends State<ConsentForm> {
                                     widget.aadhaarResponseApiurl!,
                                     widget.aadhaarNumber,
                                     widget.leadId,
-                                    widget.token
+                                    widget.token,
+                                    isOffline: widget.isOffline
                                   );
                                   await Future.delayed(const Duration(seconds: 1));
       
