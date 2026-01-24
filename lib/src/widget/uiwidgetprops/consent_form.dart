@@ -130,11 +130,11 @@ class _ConsoultFormState extends State<ConsentForm> {
                                     isLoading = false;
                                   });
                                   
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(ConstantVariable.consentOTPSendSuccessfullyString),
-                                    ),
-                                  );
+                                  // ScaffoldMessenger.of(context).showSnackBar(
+                                  //   SnackBar(
+                                  //     content: Text(ConstantVariable.consentOTPSendSuccessfullyString),
+                                  //   ),
+                                  // );
                                   await Future.delayed(const Duration(seconds: 2));
       
                                   final optionOTPSheet = await showOtpBottomSheet(

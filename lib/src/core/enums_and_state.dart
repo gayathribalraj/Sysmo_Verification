@@ -12,7 +12,6 @@ enum VerificationType { voter, aadhaar, pan, gst, passport }
 /// Button state enumeration
 enum ButtonState { idle, loading, success, error }
 
-
 /// Manages button UI state
 class ButtonStateManager {
   ButtonState _state = ButtonState.idle;
@@ -22,6 +21,7 @@ class ButtonStateManager {
   ButtonState get state => _state;
   String get text => _text;
   bool get isDisabled => _disabled;
+
   bool get isLoading => _state == ButtonState.loading;
   bool get isSuccess => _state == ButtonState.success;
   bool get isError => _state == ButtonState.error;
@@ -33,46 +33,57 @@ class ButtonStateManager {
     _disabled = false;
   }
 
-  /// Update button to loading state
+  /// Set loading state
   void setLoading() {
     _state = ButtonState.loading;
     _disabled = true;
   }
 
-  /// Update button to success state
+  /// Stop loading and go back to idle
+  void stopLoading() {
+    _state = ButtonState.idle;
+    _disabled = false;
+  }
+
+  /// Set success state
   void setSuccess(String successText) {
     _state = ButtonState.success;
     _text = successText;
     _disabled = true;
   }
 
-  /// Update button to error state
+  /// Set error state
   void setError(String errorText) {
     _state = ButtonState.error;
     _text = errorText;
     _disabled = false;
   }
 
-  /// Reset button to idle state
+  /// Reset button
   void reset(String defaultText) {
     _state = ButtonState.idle;
     _text = defaultText;
     _disabled = false;
   }
 
-  /// Get background color based on state
+  /// Background color based on state
   Color getBackgroundColor({
     Color? idleColor,
     Color? loadingColor,
     Color? successColor,
     Color? errorColor,
   }) {
-    return switch (_state) {
-      ButtonState.loading => loadingColor ?? Colors.grey,
-      ButtonState.success => successColor ?? Colors.green,
-      ButtonState.error => errorColor ?? Colors.red,
-      ButtonState.idle => idleColor ?? const Color.fromARGB(255, 3, 9, 110),
-    };
+    switch (_state) {
+      case ButtonState.loading:
+        return loadingColor ?? Colors.grey;
+      case ButtonState.success:
+        return successColor ?? Colors.green;
+      case ButtonState.error:
+        return errorColor ?? Colors.red;
+      case ButtonState.idle:
+      default:
+        return idleColor ?? const Color.fromARGB(255, 3, 9, 110);
+    }
   }
 }
 
@@ -88,7 +99,7 @@ class InputValidationManager {
     _patterns.add(pattern);
   }
 
-  /// Validate input against all patterns
+  /// Validate input against patterns
   bool validate(String input) {
     if (input.isEmpty) {
       _isValid = false;
