@@ -10,7 +10,7 @@ import 'package:sysmo_verification/kyc_validation.dart';
 class OtpSheet extends StatefulWidget {
   final String assetPath;
   final String url;
-  final dynamic isOffline;
+  final bool isOffline;
   final String aadhaarNumber;
   final String leadId;
   final String token;
@@ -19,7 +19,7 @@ class OtpSheet extends StatefulWidget {
     super.key,
     required this.assetPath,
     required this.url,
-    this.isOffline ,
+    this.isOffline = false,
     required this.aadhaarNumber,
     required this.leadId,
     required this.token,
@@ -66,7 +66,7 @@ class _OtpSheetState extends State<OtpSheet> {
       };
 
       final response = await KYCService().verify(
-        isOffline: widget.isOffline,
+        isOffline: widget.url.isEmpty ? true : widget.isOffline,
         request: jsonEncode(requestBody),
         assetPath: widget.assetPath,
         url: widget.url,
@@ -123,7 +123,7 @@ class _OtpSheetState extends State<OtpSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}: $e'),
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 3),
           ),
         );
       }

@@ -135,7 +135,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                                   //     content: Text(ConstantVariable.consentOTPSendSuccessfullyString),
                                   //   ),
                                   // );
-                                  await Future.delayed(const Duration(seconds: 2));
+                                  await Future.delayed(const Duration(seconds: 1));
       
                                   final optionOTPSheet = await showOtpBottomSheet(
                                     context,
