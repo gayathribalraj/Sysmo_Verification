@@ -288,6 +288,7 @@ class _KYCTextBoxState extends State<KYCTextBox> {
     }
 
     try {
+      if (!mounted) return;
       final consentResponse = await Navigator.push(
         context,
         MaterialPageRoute(
@@ -370,9 +371,7 @@ class _KYCTextBoxState extends State<KYCTextBox> {
       'Aadhaar ${ConstantVariable.verificationFaildString}',
     );
   } finally {
-    if (!mounted || _verificationCompleted) return;
-
-    if (!otpVerified) {
+    if (mounted && !_verificationCompleted && !otpVerified) {
       setState(() {
         _buttonStateManager.reset(widget.buttonProps.label);
       });

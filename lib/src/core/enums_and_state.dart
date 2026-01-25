@@ -81,7 +81,6 @@ class ButtonStateManager {
       case ButtonState.error:
         return errorColor ?? Colors.red;
       case ButtonState.idle:
-      default:
         return idleColor ?? const Color.fromARGB(255, 3, 9, 110);
     }
   }

@@ -69,9 +69,9 @@ class ApiClient {
   }
 
   /// Deprecated methods kept for backward compatibility
-  @deprecated
+  @Deprecated('Use post() instead')
   Future<Response> callPost(String url, {data}) => post(url, data: data);
 
-  @deprecated
+  @Deprecated('Use get() instead')
   Future<Response> callGet(String url) => get(url);
 }
