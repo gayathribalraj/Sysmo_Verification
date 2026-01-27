@@ -73,7 +73,7 @@ class GstVerificationHandler extends VerificationHandler {
 
   @override
   Future<Response> verifyOnline(String url, {dynamic request}) async {
-    return await _apiClient.get(url);
+    return await _apiClient.post(url,data: request);
   }
 
   @override
@@ -88,7 +88,7 @@ class PassportVerificationHandler extends VerificationHandler {
 
   @override
   Future<Response> verifyOnline(String url, {dynamic request}) async {
-    return await _apiClient.get(url);
+    return await _apiClient.post(url,data: request);
   }
 
   @override
@@ -103,7 +103,7 @@ class AadhaarVerificationHandler extends VerificationHandler {
 
   @override
   Future<Response> verifyOnline(String url, {dynamic request}) async {
-    return await _apiClient.get(url);
+    return await _apiClient.post(url,data: request);
   }
 
   @override

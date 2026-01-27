@@ -9,14 +9,20 @@ import 'package:sysmo_verification/kyc_validation.dart';
 /// HttpHeaderConfig holds default headers for API requests
 class HttpHeaderConfig {
   static const Map<String, String> defaultHeaders = {
-    'clientID': '220',
-    'productID': '1',
-    'appno': '100050000000004',
-    'module': 'MSME',
-    'branch': 'Chennai',
-    'user': 'user845',
-    'cp-client-trans-id': '1763037635616',
-    'cbsid': '',
+    // 'clientID': '220',
+    // 'productID': '1',
+    // 'appno': '100050000000004',
+    // 'module': 'MSME',
+    // 'branch': 'Chennai',
+    // 'user': 'user845',
+    // 'cp-client-trans-id': '1763037635616',
+    // 'cbsid': '',
+
+      "Accept": "application/json",
+        "Content-Type": "application/json",
+        'token': "U2FsdGVkX18JsMjl/kms7Q3a2rtD/YgqDLmV74wiIsqy8OtDJa1wYGd7dvlWVwYI",
+        'deviceId': 'U2FsdGVkX180KT9qN6Y67G1lw9hDybHtn/+Ud28GUrioyRQBjav6ui2BgXBGv4nz',
+        'userid': 'SAIGANESH',
   };
 }
 

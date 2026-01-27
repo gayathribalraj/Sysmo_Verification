@@ -1,4 +1,5 @@
 import 'package:sysmo_verification/kyc_validation.dart';
+import 'package:sysmo_verification/src/widget/uiwidgetprops/sysmo_alert.dart';
 
 class ConsentForm extends StatefulWidget {
   final String aadhaarmethod;
@@ -20,7 +21,7 @@ class ConsentForm extends StatefulWidget {
     this.aadhaarResponseApiurl,
     required this.leadId,
     required this.token,
-    required this.isOffline
+    required this.isOffline,
   });
 
   @override
@@ -48,16 +49,16 @@ class _ConsoultFormState extends State<ConsentForm> {
             child: Column(
               children: [
                 SizedBox(height: 10),
-      
+
                 buildParagraph(
                   "The following definitions apply throughout this Agreement unless otherwise stated:",
                 ),
-      
+
                 SizedBox(height: 10),
                 buildParagraph(
                   'a) Any expression, which has not been defined in this Agreement but is defined in the General Clauses Act, 1897 shall have the same meaning thereof.',
                 ),
-      
+
                 SizedBox(height: 10),
                 buildParagraph(
                   "b) The reference to masculine gender shall be deemed to include reference to feminine gender and vice versa. The meaning of defined terms shall be equally applicable to both the singular and plural forms of the terms defined.",
@@ -67,13 +68,13 @@ class _ConsoultFormState extends State<ConsentForm> {
                   "c) The word herein hereto, hereunder and the like mean and refer to this Agreement or any other document as a whole and not merely to the specific article, section, subsection, paragraph or clause in which the respective word appears.",
                 ),
                 SizedBox(height: 10),
-      
+
                 buildParagraph(
                   "d) The words including and include shall be deemed to be followed by the words without limitation.",
                 ),
-      
+
                 SizedBox(height: 20),
-      
+
                 Row(
                   children: [
                     Checkbox(
@@ -88,9 +89,9 @@ class _ConsoultFormState extends State<ConsentForm> {
                     Text('I Agree terms & condition'),
                   ],
                 ),
-                
+
                 SizedBox(height: 20),
-                
+
                 widget.aadhaarmethod == ConstantVariable.consentOTPString
                     ? ElevatedButton(
                         onPressed: () async {
@@ -98,85 +99,149 @@ class _ConsoultFormState extends State<ConsentForm> {
                             setState(() {
                               isLoading = true;
                             });
-                            
+
                             try {
+                              debugPrint("requestBody here");
                               // Build OTP generation request
                               final requestBody = {
                                 'aadharNumber': widget.aadhaarNumber,
                                 'uniqueId': widget.leadId,
-                                'token': widget.token
+                                'token': widget.token,
                               };
-                              
+                              debugPrint("requestBody here $requestBody");
+
                               final response = await KYCService().verify(
                                 isOffline: widget.isOffline,
-                                request: requestBody.toString(),
+                                request: jsonEncode(requestBody),
                                 assetPath: widget.assetPath,
                                 url: widget.url,
                               );
-                              
+
                               debugPrint("OTP Generation Response: $response");
                               await Future.delayed(const Duration(seconds: 1));
-      
+
                               if (response.toString().isNotEmpty) {
-                                // Parse OtpGeneration response
+                                // Parse OtpGeneration response - handle both nested and root level response
                                 final responseData = response.data;
-                                final otpGeneration = responseData['OtpGeneration'];
-                                
-                                if (otpGeneration != null && otpGeneration['ErrorCode'] == '000') {
-                                  final transactionId = otpGeneration['transactionId'];
-                                  debugPrint("OTP Generation Success - TransactionId: $transactionId");
-                                  
+                                final otpGeneration =
+                                    responseData['OtpGeneration'] ??
+                                    responseData;
+
+                                if (otpGeneration != null &&
+                                    otpGeneration['ErrorCode'] == '000') {
+                                  final transactionId =
+                                      otpGeneration['transactionId'];
+                                  debugPrint(
+                                    "OTP Generation Success - TransactionId: $transactionId",
+                                  );
+
                                   setState(() {
                                     isLoading = false;
                                   });
-                                  
+
                                   // ScaffoldMessenger.of(context).showSnackBar(
                                   //   SnackBar(
                                   //     content: Text(ConstantVariable.consentOTPSendSuccessfullyString),
                                   //   ),
                                   // );
-                                  await Future.delayed(const Duration(seconds: 1));
-      
-                                  final optionOTPSheet = await showOtpBottomSheet(
-                                    context,
-                                    widget.aadhaarResponseassetspath!,
-                                    widget.aadhaarResponseApiurl!,
-                                    widget.aadhaarNumber,
-                                    widget.leadId,
-                                    widget.token,
-                                    isOffline: widget.isOffline
+                                  await Future.delayed(
+                                    const Duration(seconds: 1),
                                   );
-                                  await Future.delayed(const Duration(seconds: 1));
-      
-                                  debugPrint("OTP Verification Response: $optionOTPSheet");
+
+                                  final optionOTPSheet =
+                                      await showOtpBottomSheet(
+                                        context,
+                                        widget.aadhaarResponseassetspath!,
+                                        widget.aadhaarResponseApiurl!,
+                                        widget.aadhaarNumber,
+                                        widget.leadId,
+                                        widget.token,
+                                        isOffline: widget.isOffline,
+                                      );
+                                  await Future.delayed(
+                                    const Duration(seconds: 1),
+                                  );
+
+                                  debugPrint(
+                                    "OTP Verification Response: $optionOTPSheet",
+                                  );
+                                  debugPrint(
+                                    "OTP Verification Response Data: ${optionOTPSheet?.data}",
+                                  );
+
+                                  // Return the OTP verification response with Aadhaar reference number
+                                  if (optionOTPSheet != null && mounted) {
+                                    debugPrint("Returning OTP response to KYCTextBox");
+                                    Navigator.pop(context, optionOTPSheet);
+                                    return;
+                                  }
                                 } else {
+                                  if (!mounted) return;
                                   setState(() {
                                     isLoading = false;
                                   });
-                                  
-                                  final errorStatus = otpGeneration?['ErrorStatus'] ?? ConstantVariable.consentOTPGendrateFailedString;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(errorStatus),
-                                    ),
+
+                                  // Get error message from response - check both nested and root level
+                                  final errorStatus =
+                                      otpGeneration?['ErrorStatus'] ??
+                                      responseData['ErrorStatus'] ??
+                                      ConstantVariable
+                                          .consentOTPGendrateFailedString;
+                                  final errorCode =
+                                      otpGeneration?['ErrorCode'] ??
+                                      responseData['ErrorCode'] ??
+                                      '';
+                                  debugPrint(
+                                    "OTP Generation Failed - ErrorCode: $errorCode, ErrorStatus: $errorStatus",
                                   );
+
+                                  if (mounted) {
+                                    SysmoAlert.failure(
+                                      message: 'OTP Generation Failed',
+                                    );
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) => SysmoAlert.failure(
+                                        message: 'OTP Generation Failed :$errorStatus ',
+
+                                        onButtonPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                      ),
+                                    );
+                                  }
                                 }
                               } else {
+                                if (!mounted) return;
                                 setState(() {
                                   isLoading = false;
                                 });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(ConstantVariable.consentOTPGendrateFailedString)),
-                                );
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        ConstantVariable
+                                            .consentOTPGendrateFailedString,
+                                      ),
+                                    ),
+                                  );
+                                }
                               }
                             } catch (error) {
+                              if (!mounted) return;
                               setState(() {
                                 isLoading = false;
                               });
                               debugPrint("OTP Generation Error: $error");
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error: ${error.toString()}')),
-                              );
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: ${error.toString()}'),
+                                    backgroundColor: Colors.red,
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
                             }
                           }
                         },
@@ -184,9 +249,13 @@ class _ConsoultFormState extends State<ConsentForm> {
                             ? SizedBox(
                                 width: 22,
                                 height: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
-                            : Text(ConstantVariable.consentOTPVerificationString),
+                            : Text(
+                                ConstantVariable.consentOTPVerificationString,
+                              ),
                       )
                     : ElevatedButton(
                         onPressed: () async {},

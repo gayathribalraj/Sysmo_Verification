@@ -62,7 +62,7 @@ class _OtpSheetState extends State<OtpSheet> {
         'otp': otpPin,
         'uid': widget.aadhaarNumber,
         'uniqueId': widget.leadId,
-        'token': widget.token
+        'token': widget.token,
       };
 
       final response = await KYCService().verify(
@@ -75,42 +75,48 @@ class _OtpSheetState extends State<OtpSheet> {
       isLoading.value = false;
 
       if (mounted) {
-        // Parse otpValidationNew response
+        // Parse otpValidationNew response - handle both nested and root level response
         final responseData = response.data;
-        final otpValidation = responseData['otpValidationNew'];
+        final otpValidation = responseData['otpValidationNew'] ?? responseData;
         debugPrint("OTP Validation Response Data: $responseData");
-        
-        if (otpValidation != null && 
-            otpValidation['ErrorCode'] == '000' && 
-            otpValidation['Status'] == 'Y') {
-          
+
+        if (otpValidation != null &&
+            otpValidation['ErrorCode'] == '000' &&
+            (otpValidation['Status'] == 'Y' ||
+                otpValidation['Status'] == 'Success')) {
           final kycDetails = otpValidation['KycDetails'];
           final transactionId = otpValidation['TransactionId'];
-         
-          
+
           debugPrint(" OTP Verification Success");
           debugPrint("TransactionId: $transactionId");
           debugPrint("Name: ${kycDetails?['name']}");
           debugPrint("KycDetails: $kycDetails");
-          
-          // Return response with KycDetails
+
+          // Return response with KycDetails for vault lookup
           if (mounted) {
-            Navigator.pop(context);
             Navigator.pop(context, response);
           }
         } else {
-          final errorStatus = otpValidation?['ErrorStatus'] ?? 'OTP verification failed';
-          final errorCode = otpValidation?['ErrorCode'] ?? 'Unknown error';
-          
-          debugPrint(" OTP Verification Failed");
+          // Get error message from response - check both nested and root level
+          final errorStatus =
+              otpValidation?['ErrorStatus'] ??
+              responseData['ErrorStatus'] ??
+              'OTP verification failed';
+          final errorCode =
+              otpValidation?['ErrorCode'] ??
+              responseData['ErrorCode'] ??
+              'Unknown error';
+
+          debugPrint("OTP Verification Failed");
           debugPrint("ErrorCode: $errorCode");
           debugPrint("ErrorStatus: $errorStatus");
-          
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('$errorStatus'),
-                backgroundColor: Colors.black,
+                content: Text(errorStatus),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
               ),
             );
           }
@@ -122,7 +128,9 @@ class _OtpSheetState extends State<OtpSheet> {
         debugPrint("OTP Verification Error: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}: $e'),
+            content: Text(
+              '${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}: $e',
+            ),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -199,8 +207,8 @@ Future<dynamic> showOtpBottomSheet(
   String url,
   String aadhaarNumber,
   String leadId,
-  dynamic cryptoService, {
-  dynamic isOffline
+  dynamic token, {
+  dynamic isOffline,
 }) async {
   return await showModalBottomSheet(
     context: context,
@@ -214,10 +222,11 @@ Future<dynamic> showOtpBottomSheet(
       isOffline: isOffline,
       aadhaarNumber: aadhaarNumber,
       leadId: leadId,
-      token: cryptoService,
+      token: token,
     ),
   );
 }
+
 Future showValidateOptions(BuildContext context) async {
   // BuildContext ctx = context;
   return await showModalBottomSheet(
@@ -251,4 +260,3 @@ Future showValidateOptions(BuildContext context) async {
     },
   );
 }
-

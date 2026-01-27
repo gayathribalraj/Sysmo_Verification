@@ -1,4 +1,3 @@
-
 /*
   @author   : Gayathri
   @created  : 08/11/2025
@@ -31,7 +30,7 @@ class KYCTextBox extends StatefulWidget {
   final bool showVerifyButton;
   final String? validationPatternErrorMessage;
   final RegExp? validationPattern;
-  final String token ;
+  final String token;
   final String leadId;
 
   const KYCTextBox({
@@ -60,7 +59,7 @@ class KYCTextBox extends StatefulWidget {
     required this.aadharvaultlookupassetpath,
     required this.aadharvaultlookupapiurl,
     required this.leadId,
-    required this.token
+    required this.token,
   });
 
   @override
@@ -83,7 +82,7 @@ class _KYCTextBoxState extends State<KYCTextBox> {
   /// Stores the current user input value
   String _currentInput = '';
 
-  //  Aadhaar verification state flags 
+  //  Aadhaar verification state flags
   /// Indicates whether OTP verification was successful
   bool otpVerified = false;
 
@@ -127,11 +126,16 @@ class _KYCTextBoxState extends State<KYCTextBox> {
     _currentInput = value.trim();
     setState(() {
       _buttonStateManager.reset(widget.buttonProps.label);
+      _verificationCompleted =
+          false; // Reset verification state on input change
     });
   }
 
   Future<void> _handleVerification() async {
     if (_currentInput.isEmpty) return;
+
+    // Reset verification completed flag before starting new verification
+    _verificationCompleted = false;
 
     try {
       switch (widget.verificationType) {
@@ -306,19 +310,28 @@ class _KYCTextBoxState extends State<KYCTextBox> {
         ),
       );
 
+      debugPrint("ConsentForm returned: $consentResponse");
+      debugPrint("ConsentForm data: ${consentResponse?.data}");
+      debugPrint("ConsentForm data not null: ${consentResponse != null}");
+
       if (consentResponse != null && consentResponse.data != null) {
-        final otpValidation = consentResponse.data['otpValidationNew'];
+        // Extract otpValidationNew from response.data
+        final responseData = consentResponse.data;
+        final otpValidation = responseData['otpValidationNew'] ?? responseData;
+
+        debugPrint("otpValidation extracted: $otpValidation");
+        debugPrint("otpValidation ErrorCode: ${otpValidation['ErrorCode']}");
+        debugPrint("otpValidation Status: ${otpValidation['Status']}");
 
         if (otpValidation != null &&
             otpValidation['ErrorCode'] == '000' &&
-            otpValidation['Status'] == 'Y') {
-          debugPrint("OTP Verification SUCCESS");
+            (otpValidation['Status'] == 'Y' ||
+                otpValidation['Status'] == 'Success')) {
+          debugPrint("OTP Verification SUCCESS - Starting vault lookup");
 
-          await handleOtpSuccessAndVault(
-            otpValidation,
-            consentResponse,
-          );
+          await handleOtpSuccessAndVault(otpValidation, consentResponse);
         } else {
+          debugPrint("OTP Verification FAILED - otpValidation: $otpValidation");
           _handleVerificationError(
             'Aadhaar ID ${ConstantVariable.verificationFaildString}',
           );
@@ -335,238 +348,254 @@ class _KYCTextBoxState extends State<KYCTextBox> {
       );
     }
   }
+
   /// Flag to prevent duplicate verification success/error handling
   bool _verificationCompleted = false;
 
   /// Handles successful OTP verification and initiates vault lookup
   /// First checks if reference number exists in OTP response, otherwise calls vault lookup
   Future<void> handleOtpSuccessAndVault(
-  Map<String, dynamic> otpValidation,
-  Response otpResponse,
-) async {
-  try {
-    final refNumFromOtp = otpValidation['aadharRefNum'];
+    Map<String, dynamic> otpValidation,
+    Response otpResponse,
+  ) async {
+    try {
+      final refNumFromOtp = otpValidation['aadharRefNum'];
+      debugPrint("aadharRefNum from OTP: $refNumFromOtp");
 
-    if (refNumFromOtp != null && refNumFromOtp.toString().isNotEmpty) {
-      aadhaarRefNumber = refNumFromOtp.toString();
-      otpVerified = true;
-      otpVrfy = false;
+      if (refNumFromOtp != null && refNumFromOtp.toString().isNotEmpty) {
+        aadhaarRefNumber = refNumFromOtp.toString();
+        otpVerified = true;
+        otpVrfy = false;
+        debugPrint("Using aadharRefNum from OTP response: $aadhaarRefNumber");
 
-      _handleVaultVerificationSuccess(
-        otpValidation,
-        {},
-        aadhaarRefNumber!,
-      );
-      return;
-    }
+        _handleVaultVerificationSuccess(otpValidation, {}, aadhaarRefNumber!);
+        return;
+      }
 
-    await aadharVaultLookup(
-      _currentInput,
-      widget.leadId,
-      otpValidation,
-    );
-  } catch (e) {
-    debugPrint('handleOtpSuccessAndVault Error: $e');
-    _handleVerificationError(
-      'Aadhaar ${ConstantVariable.verificationFaildString}',
-    );
-  } finally {
-    if (mounted && !_verificationCompleted && !otpVerified) {
-      setState(() {
-        _buttonStateManager.reset(widget.buttonProps.label);
-      });
+      debugPrint("aadharRefNum not in OTP response, calling vault lookup...");
+      await aadharVaultLookup(_currentInput, widget.leadId, otpValidation);
+    } catch (e) {
+      debugPrint('handleOtpSuccessAndVault Error: $e');
+      if (!_verificationCompleted) {
+        _handleVerificationError(
+          'Aadhaar ${ConstantVariable.verificationFaildString}',
+        );
+      }
     }
   }
-}
 
-  
   /// Looks up Aadhaar reference number from vault
   /// If not found (errorCode=2), triggers new vault registration
   Future<void> aadharVaultLookup(
-  String aadhaarNumber,
-  String leadId,
-  Map<String, dynamic> otpValidation,
-) async {
-  try {
-    final vaultLookupRequest = {
-      'aadharNumber': aadhaarNumber,
-      'uniqueId': widget.leadId,
-      'token': widget.token,
-    };
+    String aadhaarNumber,
+    String leadId,
+    Map<String, dynamic> otpValidation,
+  ) async {
+    try {
+      debugPrint("Starting Vault Lookup for Aadhaar: $aadhaarNumber");
 
-    final vaultLookupResponse = await _verificationHandler.verify(
-      isOffline: widget.isOffline,
-      url: widget.aadharvaultlookupapiurl,
-      assetPath: widget.aadharvaultlookupassetpath,
-      request: vaultLookupRequest,
-    );
+      final vaultLookupRequest = {
+        'aadharNumber': aadhaarNumber,
+        'uniqueId': widget.leadId,
+        'token': widget.token,
+      };
+      debugPrint("Vault Lookup Request: $vaultLookupRequest");
 
-    final vaultData = vaultLookupResponse.data;
-    if (vaultData == null) {
-      throw Exception('Vault Lookup returned null data');
-    }
-
-    final vaultLookup = vaultData is Map
-        ? (vaultData['VaultLoolUp'] ?? vaultData)
-        : vaultData;
-
-    final errorCode = vaultLookup is Map
-        ? (vaultLookup['errorCode'] ??
-            vaultLookup['ErrorCode'] ??
-            vaultLookup['error_code'])
-        : null;
-
-    final refNum =
-        vaultLookup is Map ? vaultLookup['aadharRefNum'] : null;
-
-    if ((errorCode == '000' || errorCode == 0) && refNum != null) {
-      aadhaarRefNumber = refNum.toString();
-      otpVerified = true;
-      otpVrfy = false;
-
-      _handleVaultVerificationSuccess(
-        otpValidation,
-        vaultLookup is Map<String, dynamic> ? vaultLookup : {},
-        aadhaarRefNumber!,
+      final vaultLookupResponse = await _verificationHandler.verify(
+        isOffline: widget.isOffline,
+        url: widget.aadharvaultlookupapiurl,
+        assetPath: widget.aadharvaultlookupassetpath,
+        request: vaultLookupRequest,
       );
-      return; 
-    }
 
-    if (errorCode == '2' || errorCode == 2) {
-      await triggerAadharVault(
-        aadhaarNumber,
-        widget.leadId,
-        otpValidation,
+      debugPrint("Vault Lookup Response: ${vaultLookupResponse.data}");
+
+      final vaultData = vaultLookupResponse.data;
+      if (vaultData == null) {
+        throw Exception('Vault Lookup returned null data');
+      }
+
+      final vaultLookup = vaultData is Map
+          ? (vaultData['VaultLoolUp'] ?? vaultData)
+          : vaultData;
+
+      final errorCode = vaultLookup is Map
+          ? (vaultLookup['errorCode'] ??
+                vaultLookup['ErrorCode'] ??
+                vaultLookup['error_code'])
+          : null;
+
+      final refNum = vaultLookup is Map ? vaultLookup['aadharRefNum'] : null;
+
+      debugPrint("Vault Lookup - ErrorCode: $errorCode, RefNum: $refNum");
+
+      if ((errorCode == '000' || errorCode == 0) && refNum != null) {
+        aadhaarRefNumber = refNum.toString();
+        otpVerified = true;
+        otpVrfy = false;
+
+        _handleVaultVerificationSuccess(
+          otpValidation,
+          vaultLookup is Map<String, dynamic> ? vaultLookup : {},
+          aadhaarRefNumber!,
+        );
+        return;
+      }
+
+      if (errorCode == '2' || errorCode == 2) {
+        debugPrint(
+          "Vault Lookup returned errorCode 2 - triggering Aadhaar Vault registration",
+        );
+        await triggerAadharVault(aadhaarNumber, widget.leadId, otpValidation);
+        return;
+      }
+
+      throw Exception('Vault Lookup failed - ErrorCode: $errorCode');
+    } catch (e) {
+      debugPrint('aadharVaultLookup Error: $e');
+      _handleVerificationError(
+        'Aadhaar ${ConstantVariable.verificationFaildString}',
       );
-      return;
     }
-
-    throw Exception('Vault Lookup failed - ErrorCode: $errorCode');
-  } catch (e) {
-    debugPrint('aadharVaultLookup Error: $e');
-    _handleVerificationError(
-      'Aadhaar ${ConstantVariable.verificationFaildString}',
-    );
   }
-}
-
-
 
   /// Registers Aadhaar number in vault and retrieves reference number
   Future<void> triggerAadharVault(
-  String aadhaarNumber,
-  String leadId,
-  Map<String, dynamic> otpValidation,
-) async {
-  try {
-    final vaultRequest = {
-      'aadharNumber': aadhaarNumber,
-      'uniqueId': widget.leadId,
-      'token': widget.token,
-    };
+    String aadhaarNumber,
+    String leadId,
+    Map<String, dynamic> otpValidation,
+  ) async {
+    try {
+      debugPrint("Starting Aadhaar Vault registration for: $aadhaarNumber");
 
-    final vaultResponse = await _verificationHandler.verify(
-      isOffline: widget.isOffline,
-      url: widget.aadharvaultApiurl,
-      assetPath: widget.aadharvaultassetpath,
-      request: vaultRequest,
+      final vaultRequest = {
+        'aadharNumber': aadhaarNumber,
+        'uniqueId': widget.leadId,
+        'token': widget.token,
+      };
+      debugPrint("Aadhaar Vault Request: $vaultRequest");
+
+      final vaultResponse = await _verificationHandler.verify(
+        isOffline: widget.isOffline,
+        url: widget.aadharvaultApiurl,
+        assetPath: widget.aadharvaultassetpath,
+        request: vaultRequest,
+      );
+
+      debugPrint("Aadhaar Vault Response: ${vaultResponse.data}");
+
+      final vaultData = vaultResponse.data;
+      if (vaultData == null) {
+        throw Exception('Aadhaar Vault returned null data');
+      }
+
+      final aadharVault = vaultData is Map
+          ? (vaultData['AadharValut'] ?? vaultData)
+          : vaultData;
+
+      final errorCode = aadharVault is Map
+          ? (aadharVault['errorCode'] ??
+                aadharVault['ErrorCode'] ??
+                aadharVault['error_code'])
+          : null;
+
+      final refNum = aadharVault is Map ? aadharVault['aadharRefNum'] : null;
+
+      debugPrint("Aadhaar Vault - ErrorCode: $errorCode, RefNum: $refNum");
+
+      if ((errorCode == '000' || errorCode == 0) && refNum != null) {
+        aadhaarRefNumber = refNum.toString();
+        otpVerified = true;
+        otpVrfy = false;
+        debugPrint("Aadhaar Vault SUCCESS - RefNum: $aadhaarRefNumber");
+
+        _handleVaultVerificationSuccess(
+          otpValidation,
+          aadharVault is Map<String, dynamic> ? aadharVault : {},
+          aadhaarRefNumber!,
+        );
+        return;
+      }
+
+      throw Exception('Aadhaar Vault failed - ErrorCode: $errorCode');
+    } catch (e) {
+      debugPrint('triggerAadharVault Error: $e');
+      _handleVerificationError(
+        'Aadhaar ${ConstantVariable.verificationFaildString}',
+      );
+    }
+  }
+
+  /// Creates final response with OTP validation, vault data and Aadhaar reference
+  /// then triggers verification success handler
+  void _handleVaultVerificationSuccess(
+    Map<String, dynamic> otpValidation,
+    Map<String, dynamic> vaultData,
+    String aadhaarRefNumber,
+  ) {
+    final finalResponse = Response(
+      requestOptions: RequestOptions(path: ''),
+      data: {
+        'otpValidation': otpValidation,
+        'vaultData': vaultData,
+        'aadhaarRefNumber': aadhaarRefNumber,
+      },
+      statusCode: 200,
     );
 
-    final vaultData = vaultResponse.data;
-    if (vaultData == null) {
-      throw Exception('Aadhaar Vault returned null data');
-    }
-
-    final aadharVault = vaultData is Map
-        ? (vaultData['AadharValut'] ?? vaultData)
-        : vaultData;
-
-    final errorCode = aadharVault is Map
-        ? (aadharVault['errorCode'] ??
-            aadharVault['ErrorCode'] ??
-            aadharVault['error_code'])
-        : null;
-
-    final refNum =
-        aadharVault is Map ? aadharVault['aadharRefNum'] : null;
-
-    if ((errorCode == '000' || errorCode == 0) && refNum != null) {
-      aadhaarRefNumber = refNum.toString();
-      otpVerified = true;
-      otpVrfy = false;
-
-      _handleVaultVerificationSuccess(
-        otpValidation,
-        aadharVault is Map<String, dynamic> ? aadharVault : {},
-        aadhaarRefNumber!,
-      );
-      return; 
-    }
-
-    throw Exception('Aadhaar Vault failed - ErrorCode: $errorCode');
-  } catch (e) {
-    debugPrint('triggerAadharVault Error: $e');
-    _handleVerificationError(
-      'Aadhaar ${ConstantVariable.verificationFaildString}',
+    _handleVerificationSuccess(
+      'Aadhaar ID ${ConstantVariable.verifiedSuccessfullyString}',
+      finalResponse,
     );
   }
-}
-/// Creates final response with OTP validation, vault data and Aadhaar reference
-/// then triggers verification success handler
-void _handleVaultVerificationSuccess(
-  Map<String, dynamic> otpValidation,
-  Map<String, dynamic> vaultData,
-  String aadhaarRefNumber,
-) {
-  final finalResponse = Response(
-    requestOptions: RequestOptions(path: ''),
-    data: {
-      'otpValidation': otpValidation,
-      'vaultData': vaultData,
-      'aadhaarRefNumber': aadhaarRefNumber,
-    },
-    statusCode: 200,
-  );
-
-  _handleVerificationSuccess(
-    'Aadhaar ID ${ConstantVariable.verifiedSuccessfullyString}',
-    finalResponse,
-  );
-}
-
-
 
   /// Handles successful verification - calls onSuccess callback,
   /// updates button state to 'verified', and shows success snackbar
   void _handleVerificationSuccess(String message, Response response) {
-  if (!mounted || _verificationCompleted) return;
+    debugPrint(
+      "_handleVerificationSuccess called - mounted: $mounted, _verificationCompleted: $_verificationCompleted",
+    );
 
-  _verificationCompleted = true;
+    if (!mounted || _verificationCompleted) {
+      debugPrint(
+        "Skipping _handleVerificationSuccess - already completed or not mounted",
+      );
+      return;
+    }
 
-  widget.onSuccess(response);
+    _verificationCompleted = true;
+    debugPrint("Setting button state to SUCCESS");
 
-  setState(() {
-    _buttonStateManager.setSuccess(ConstantVariable.verifiedString);
-  });
+    widget.onSuccess(response);
 
-  ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(message)));
-}
+    setState(() {
+      _buttonStateManager.setSuccess(ConstantVariable.verifiedString);
+    });
 
-/// Handles verification failure - calls onError callback,
-/// updates button state to 'failed', and shows error snackbar
-void _handleVerificationError(String message) {
-  if (!mounted || _verificationCompleted) return;
+    debugPrint(
+      "Button state set to: ${_buttonStateManager.text}, isSuccess: ${_buttonStateManager.isSuccess}",
+    );
 
-  widget.onError(message);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
-  setState(() {
-    _buttonStateManager.setError(ConstantVariable.failedString);
-  });
+  /// Handles verification failure - calls onError callback,
+  /// updates button state to 'failed', and shows error snackbar
+  void _handleVerificationError(String message) {
+    if (!mounted || _verificationCompleted) return;
 
-  ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(message)));
-}
+    widget.onError(message);
+
+    setState(() {
+      _buttonStateManager.setError(ConstantVariable.failedString);
+    });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   /// Builds the KYC input field with verify button
   /// Button is disabled when input is invalid or verification is in progress
@@ -597,7 +626,8 @@ void _handleVerificationError(String message) {
           VerifyButton(
             stateManager: _buttonStateManager,
             buttonProps: widget.buttonProps,
-            onPressed: (!_inputValidator.isValid ||
+            onPressed:
+                (!_inputValidator.isValid ||
                     (widget.validationPattern != null &&
                         !widget.validationPattern!.hasMatch(_currentInput)) ||
                     _buttonStateManager.isLoading ||
