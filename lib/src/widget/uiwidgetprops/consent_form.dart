@@ -104,7 +104,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                               debugPrint("requestBody here");
                               // Build OTP generation request
                               final requestBody = {
-                                'aadharNumber': widget.aadhaarNumber,
+                                'aadharNumber':widget.aadhaarNumber,
                                 'uniqueId': widget.leadId,
                                 'token': widget.token,
                               };
@@ -196,17 +196,19 @@ class _ConsoultFormState extends State<ConsentForm> {
                                   );
 
                                   if (mounted) {
-                                    SysmoAlert.failure(
-                                      message: 'OTP Generation Failed',
-                                    );
                                     showDialog(
                                       context: context,
-                                      builder: (_) => SysmoAlert.failure(
-                                        message: 'OTP Generation Failed :$errorStatus ',
-
-                                        onButtonPressed: () {
-                                          Navigator.pop(context);
-                                        },
+                                      barrierDismissible: false,
+                                      builder: (dialogContext) => Dialog(
+                                        backgroundColor: Colors.transparent,
+                                        child: SysmoAlert.failure(
+                                          message: 'OTP Generation Failed',
+                                          detailMessage: 'Error Code: $errorCode\nError Status: $errorStatus',
+                                          viewButtonText: 'View Log',
+                                          onButtonPressed: () {
+                                            Navigator.pop(dialogContext);
+                                          },
+                                        ),
                                       ),
                                     );
                                   }
