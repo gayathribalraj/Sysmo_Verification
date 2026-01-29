@@ -82,13 +82,6 @@ class _KYCTextBoxState extends State<KYCTextBox> {
   /// Stores the current user input value
   String _currentInput = '';
 
-  //  Aadhaar verification state flags
-  /// Indicates whether OTP verification was successful
-  bool otpVerified = false;
-
-  /// Flag to track OTP verification state
-  bool otpVrfy = true;
-
   /// Stores the Aadhaar reference number after successful verification
   String? aadhaarRefNumber;
 
@@ -163,7 +156,6 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
   /// Verifies Voter ID using the epic number
   Future<void> _verifyVoter() async {
-    await Future.delayed(const Duration(seconds: 1));
     final voterRequest = VoteridRequest(epicNo: _currentInput);
     try {
       final response = await _verificationHandler.verify(
@@ -193,7 +185,6 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
   /// Verifies PAN card number
   Future<void> _verifyPan() async {
-    await Future.delayed(const Duration(seconds: 1));
     final panRequest = PanidRequest(pan: _currentInput);
     try {
       final response = await _verificationHandler.verify(
@@ -223,7 +214,6 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
   /// Verifies GST number
   Future<void> _verifyGst() async {
-    await Future.delayed(const Duration(seconds: 1));
     try {
       final response = await _verificationHandler.verify(
         isOffline: widget.isOffline,
@@ -251,7 +241,6 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
   /// Verifies Passport number
   Future<void> _verifyPassport() async {
-    await Future.delayed(const Duration(seconds: 1));
     try {
       final response = await _verificationHandler.verify(
         isOffline: widget.isOffline,
@@ -306,6 +295,10 @@ class _KYCTextBoxState extends State<KYCTextBox> {
             leadId: widget.leadId,
             token: widget.token,
             isOffline: widget.isOffline,
+            aadharvaultlookupassetpath: widget.aadharvaultlookupassetpath,
+            aadharvaultlookupapiurl: widget.aadharvaultlookupapiurl,
+            aadharvaultassetpath: widget.aadharvaultassetpath,
+            aadharvaultApiurl: widget.aadharvaultApiurl,
           ),
         ),
       );
@@ -327,9 +320,31 @@ class _KYCTextBoxState extends State<KYCTextBox> {
             otpValidation['ErrorCode'] == '000' &&
             (otpValidation['Status'] == 'Y' ||
                 otpValidation['Status'] == 'Success')) {
-          debugPrint("OTP Verification SUCCESS - Starting vault lookup");
+          debugPrint("OTP Verification SUCCESS");
 
-          await handleOtpSuccessAndVault(otpValidation, consentResponse);
+          // Check if aadharRefNum is already in response (from vault operations in ConsentForm)
+          final refNum =
+              responseData['aadharRefNum'] ?? otpValidation['aadharRefNum'];
+          final vaultData = responseData['vaultData'];
+
+          if (refNum != null && refNum.toString().isNotEmpty) {
+            debugPrint("aadharRefNum found in response: $refNum");
+            aadhaarRefNumber = refNum.toString();
+            _handleVaultVerificationSuccess(
+              otpValidation is Map<String, dynamic> ? otpValidation : {},
+              vaultData is Map<String, dynamic> ? vaultData : {},
+              aadhaarRefNumber!,
+            );
+          } else {
+            // Fallback: run vault operations here if not done in ConsentForm
+            debugPrint(
+              "aadharRefNum not in response, running vault operations...",
+            );
+            setState(() {
+              _buttonStateManager.setLoading();
+            });
+            await handleOtpSuccessAndVault(otpValidation, consentResponse);
+          }
         } else {
           debugPrint("OTP Verification FAILED - otpValidation: $otpValidation");
           _handleVerificationError(
@@ -364,8 +379,6 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
       if (refNumFromOtp != null && refNumFromOtp.toString().isNotEmpty) {
         aadhaarRefNumber = refNumFromOtp.toString();
-        otpVerified = true;
-        otpVrfy = false;
         debugPrint("Using aadharRefNum from OTP response: $aadhaarRefNumber");
 
         _handleVaultVerificationSuccess(otpValidation, {}, aadhaarRefNumber!);
@@ -431,8 +444,6 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
       if ((errorCode == '000' || errorCode == 0) && refNum != null) {
         aadhaarRefNumber = refNum.toString();
-        otpVerified = true;
-        otpVrfy = false;
 
         _handleVaultVerificationSuccess(
           otpValidation,
@@ -446,6 +457,9 @@ class _KYCTextBoxState extends State<KYCTextBox> {
         debugPrint(
           "Vault Lookup returned errorCode 2 - triggering Aadhaar Vault registration",
         );
+        setState(() {
+          _buttonStateManager.setLoading();
+        });
         await triggerAadharVault(aadhaarNumber, widget.leadId, otpValidation);
         return;
       }
@@ -505,8 +519,6 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
       if ((errorCode == '000' || errorCode == 0) && refNum != null) {
         aadhaarRefNumber = refNum.toString();
-        otpVerified = true;
-        otpVrfy = false;
         debugPrint("Aadhaar Vault SUCCESS - RefNum: $aadhaarRefNumber");
 
         _handleVaultVerificationSuccess(

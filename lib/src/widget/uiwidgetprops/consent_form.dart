@@ -11,6 +11,10 @@ class ConsentForm extends StatefulWidget {
   final String leadId;
   final String token;
   final bool isOffline;
+  final String aadharvaultlookupassetpath;
+  final String aadharvaultlookupapiurl;
+  final String aadharvaultassetpath;
+  final String aadharvaultApiurl;
   const ConsentForm({
     super.key,
     required this.aadhaarmethod,
@@ -22,6 +26,10 @@ class ConsentForm extends StatefulWidget {
     required this.leadId,
     required this.token,
     required this.isOffline,
+    required this.aadharvaultlookupassetpath,
+    required this.aadharvaultlookupapiurl,
+    required this.aadharvaultassetpath,
+    required this.aadharvaultApiurl,
   });
 
   @override
@@ -30,7 +38,6 @@ class ConsentForm extends StatefulWidget {
 
 class _ConsoultFormState extends State<ConsentForm> {
   bool isChecked = false;
-  String inputForm = '';
   bool isLoading = false;
   @override
   Widget build(BuildContext context) {
@@ -40,6 +47,14 @@ class _ConsoultFormState extends State<ConsentForm> {
       },
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back,color: Colors.black,),
+            onPressed: isLoading
+                ? null
+                : () {
+                    Navigator.pop(context);
+                  },
+          ),
           title: Text("Terms & Conditions"),
           backgroundColor: Colors.teal,
         ),
@@ -104,7 +119,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                               debugPrint("requestBody here");
                               // Build OTP generation request
                               final requestBody = {
-                                'aadharNumber':widget.aadhaarNumber,
+                                'aadharNumber': widget.aadhaarNumber,
                                 'uniqueId': widget.leadId,
                                 'token': widget.token,
                               };
@@ -118,7 +133,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                               );
 
                               debugPrint("OTP Generation Response: $response");
-                              await Future.delayed(const Duration(seconds: 1));
+                              // await Future.delayed(const Duration(seconds: 1));
 
                               if (response.toString().isNotEmpty) {
                                 // Parse OtpGeneration response - handle both nested and root level response
@@ -139,15 +154,6 @@ class _ConsoultFormState extends State<ConsentForm> {
                                     isLoading = false;
                                   });
 
-                                  // ScaffoldMessenger.of(context).showSnackBar(
-                                  //   SnackBar(
-                                  //     content: Text(ConstantVariable.consentOTPSendSuccessfullyString),
-                                  //   ),
-                                  // );
-                                  await Future.delayed(
-                                    const Duration(seconds: 1),
-                                  );
-
                                   final optionOTPSheet =
                                       await showOtpBottomSheet(
                                         context,
@@ -157,10 +163,15 @@ class _ConsoultFormState extends State<ConsentForm> {
                                         widget.leadId,
                                         widget.token,
                                         isOffline: widget.isOffline,
+                                        aadharvaultlookupassetpath:
+                                            widget.aadharvaultlookupassetpath,
+                                        aadharvaultlookupapiurl:
+                                            widget.aadharvaultlookupapiurl,
+                                        aadharvaultassetpath:
+                                            widget.aadharvaultassetpath,
+                                        aadharvaultApiurl:
+                                            widget.aadharvaultApiurl,
                                       );
-                                  await Future.delayed(
-                                    const Duration(seconds: 1),
-                                  );
 
                                   debugPrint(
                                     "OTP Verification Response: $optionOTPSheet",
@@ -169,9 +180,8 @@ class _ConsoultFormState extends State<ConsentForm> {
                                     "OTP Verification Response Data: ${optionOTPSheet?.data}",
                                   );
 
-                                  // Return the OTP verification response with Aadhaar reference number
+                                  // Return the OTP verification response (vault operations done in OTP sheet)
                                   if (optionOTPSheet != null && mounted) {
-                                    debugPrint("Returning OTP response to KYCTextBox");
                                     Navigator.pop(context, optionOTPSheet);
                                     return;
                                   }
@@ -203,7 +213,8 @@ class _ConsoultFormState extends State<ConsentForm> {
                                         backgroundColor: Colors.transparent,
                                         child: SysmoAlert.failure(
                                           message: 'OTP Generation Failed',
-                                          detailMessage: 'Error Code: $errorCode\nError Status: $errorStatus',
+                                          detailMessage:
+                                              'Error Code: $errorCode\nError Status: $errorStatus',
                                           viewButtonText: 'View Log',
                                           onButtonPressed: () {
                                             Navigator.pop(dialogContext);
