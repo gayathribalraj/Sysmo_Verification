@@ -179,8 +179,21 @@ class _OtpSheetState extends State<OtpSheet> {
   }
 
   Future<void> _handleOtpVerification() async {
-    if (otpPin.length != 6) {
+    if (otpPin.isEmpty || otpPin.length != 6) {
       isLoading.value = false;
+      showDialog(
+        context: context,
+        builder: (dialogContext) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: SysmoAlert.failure(
+            message: 'Please enter a valid 6-digit OTP',
+            detailMessage: 'All OTP fields are required',
+            onButtonPressed: () {
+              Navigator.pop(dialogContext);
+            },
+          ),
+        ),
+      );
       return;
     }
 
@@ -465,23 +478,29 @@ class _OtpSheetState extends State<OtpSheet> {
           // Close button row
           Align(
             alignment: Alignment.topRight,
-            child: IconButton(
-              onPressed: () {
-
-        showDialog(
-          context: context,
-          builder: (dialogContext) => Dialog(
-            backgroundColor: Colors.transparent,
-            child: SysmoAlert.failure(
-              message: 'if you close now, the verification will be incomplete.',
-              onButtonPressed: () {
-                Navigator.pop(dialogContext);
-                Navigator.pop(context);
+            child: ValueListenableBuilder<bool>(
+              valueListenable: isLoading,
+              builder: (context, loading, _) {
+                return IconButton(
+                  onPressed: loading ? null : () {
+                    showDialog(
+                      context: context,
+                      builder: (dialogContext) => Dialog(
+                        backgroundColor: Colors.transparent,
+                        child: SysmoAlert.failure(
+                          message:
+                              'if you close now, the verification will be incomplete.',
+                          onButtonPressed: () {
+                            Navigator.pop(dialogContext);
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.close, color: loading ? Colors.grey.shade300 : Colors.grey),
+                );
               },
-            ),
-          ),
-        );              },
-              icon: const Icon(Icons.close, color: Colors.grey),
             ),
           ),
           const Text(

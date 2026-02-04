@@ -592,9 +592,9 @@ class _KYCTextBoxState extends State<KYCTextBox> {
     );
     showDialog(
       context: context,
-      builder: (_) => SysmoAlert.success(
-        message: "${Text(message)}",
-        onButtonPressed: () => Navigator.of(context).pop(),
+      builder: (dialogContext) => SysmoAlert.success(
+        message: message,
+        onButtonPressed: () => Navigator.pop(dialogContext)
       ),
     );
 
@@ -616,9 +616,9 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
     showDialog(
       context: context,
-      builder: (_) => SysmoAlert.failure(
-        message: "${Text(message)}",
-        onButtonPressed: () => Navigator.of(context).pop(),
+      builder: (dialogContext) => SysmoAlert.failure(
+        message:message,
+        onButtonPressed: () => Navigator.pop(dialogContext)
       ),
     );
   }
