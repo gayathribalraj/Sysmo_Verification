@@ -48,7 +48,7 @@ class _ConsoultFormState extends State<ConsentForm> {
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
-            icon: Icon(Icons.arrow_back,color: Colors.black,),
+            icon: Icon(Icons.arrow_back, color: Colors.black),
             onPressed: isLoading
                 ? null
                 : () {
@@ -171,6 +171,8 @@ class _ConsoultFormState extends State<ConsentForm> {
                                             widget.aadharvaultassetpath,
                                         aadharvaultApiurl:
                                             widget.aadharvaultApiurl,
+                                        otpGenerateAssetPath: widget.assetPath,
+                                        otpGenerateApiUrl: widget.url,
                                       );
 
                                   debugPrint(
@@ -230,11 +232,17 @@ class _ConsoultFormState extends State<ConsentForm> {
                                   isLoading = false;
                                 });
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        ConstantVariable
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (dialogContext) => Dialog(
+                                      backgroundColor: Colors.transparent,
+                                      child: SysmoAlert.failure(
+                                        message: ConstantVariable
                                             .consentOTPGendrateFailedString,
+                                        onButtonPressed: () {
+                                          Navigator.pop(dialogContext);
+                                        },
                                       ),
                                     ),
                                   );
@@ -247,11 +255,19 @@ class _ConsoultFormState extends State<ConsentForm> {
                               });
                               debugPrint("OTP Generation Error: $error");
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error: ${error.toString()}'),
-                                    backgroundColor: Colors.red,
-                                    duration: const Duration(seconds: 3),
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (dialogContext) => Dialog(
+                                    backgroundColor: Colors.transparent,
+                                    child: SysmoAlert.failure(
+                                      message: 'Aadhaar Verification Failed',
+                                      detailMessage: error.toString(),
+                                      viewButtonText: 'View Log',
+                                      onButtonPressed: () {
+                                        Navigator.pop(dialogContext);
+                                      },
+                                    ),
                                   ),
                                 );
                               }

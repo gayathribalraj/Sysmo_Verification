@@ -7,7 +7,7 @@
 import 'package:sysmo_verification/kyc_validation.dart';
 
 /// KYC input field widget with reactive form integration
-class KYCInputField extends StatelessWidget {
+class KYCInputField extends StatefulWidget {
   final FormProps formProps;
   final StyleProps styleProps;
   final InputValidationManager validationManager;
@@ -16,6 +16,7 @@ class KYCInputField extends StatelessWidget {
   final TextInputType keyboardType;
   final ReactiveFormFieldCallback<String>? onChange;
   final RegExp? validationPattern;
+  final bool obscureText;
 
   const KYCInputField({
     super.key,
@@ -27,7 +28,27 @@ class KYCInputField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.onChange,
     this.validationPattern,
+    this.obscureText = false,
   });
+
+  @override
+  State<KYCInputField> createState() => _KYCInputFieldState();
+}
+
+class _KYCInputFieldState extends State<KYCInputField> {
+  late bool _isObscured;
+
+  @override
+  void initState() {
+    super.initState();
+    _isObscured = widget.obscureText;
+  }
+
+  void _toggleObscure() {
+    setState(() {
+      _isObscured = !_isObscured;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,36 +60,55 @@ class KYCInputField extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           IgnorePointer(
-            ignoring: disabled,
+            ignoring: widget.disabled,
             child: ReactiveTextField<String>(
               autofocus: false,
-              keyboardType: keyboardType,
-              formControlName: formProps.formControlName,
-              onChanged: onChange,
-              maxLength: formProps.maxLength,
-              style: styleProps.textStyle ?? const TextStyle(fontSize: 14),
-              decoration: styleProps.inputDecoration ??
+              keyboardType: widget.keyboardType,
+              formControlName: widget.formProps.formControlName,
+              onChanged: widget.onChange,
+              maxLength: widget.formProps.maxLength,
+              obscureText: _isObscured,
+              style:
+                  widget.styleProps.textStyle ?? const TextStyle(fontSize: 14),
+              decoration:
+                  widget.styleProps.inputDecoration ??
                   InputDecoration(
                     label: RichText(
                       text: TextSpan(
-                        text: formProps.label,
-                        style: styleProps.textStyle ??
+                        text: widget.formProps.label,
+                        style:
+                            widget.styleProps.textStyle ??
                             const TextStyle(color: Colors.black, fontSize: 18),
                         children: [
                           TextSpan(
-                            text: formProps.mandatory ? ' *' : '',
+                            text: widget.formProps.mandatory ? ' *' : '',
                             style: const TextStyle(color: Colors.red),
                           ),
                         ],
                       ),
                     ),
-                    errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
+                    errorStyle: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 12,
+                    ),
+                    suffixIcon: widget.obscureText
+                        ? IconButton(
+                            icon: Icon(
+                              _isObscured
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.grey,
+                            ),
+                            onPressed: _toggleObscure,
+                          )
+                        : null,
                   ),
-              validationMessages: formProps.validator != null
+              validationMessages: widget.formProps.validator != null
                   ? {
                       '': (control) {
-                        final abstractControl = control as AbstractControl<dynamic>;
-                        return formProps.validator!(abstractControl);
+                        final abstractControl =
+                            control as AbstractControl<dynamic>;
+                        return widget.formProps.validator!(abstractControl);
                       },
                     }
                   : null,
@@ -76,17 +116,19 @@ class KYCInputField extends StatelessWidget {
           ),
           ReactiveFormConsumer(
             builder: (context, form, child) {
-              final control = form.control(formProps.formControlName);
+              final control = form.control(widget.formProps.formControlName);
               final currentValue = control.value ?? '';
-              final isPatternInvalid = validationPattern != null &&
+              final isPatternInvalid =
+                  widget.validationPattern != null &&
                   currentValue.isNotEmpty &&
-                  !validationPattern!.hasMatch(currentValue);
-      
-              if (isPatternInvalid && validationPatternErrorMessage != null) {
+                  !widget.validationPattern!.hasMatch(currentValue);
+
+              if (isPatternInvalid &&
+                  widget.validationPatternErrorMessage != null) {
                 return Padding(
                   padding: const EdgeInsets.only(top: 4, left: 4),
                   child: Text(
-                    validationPatternErrorMessage!,
+                    widget.validationPatternErrorMessage!,
                     style: const TextStyle(color: Colors.red, fontSize: 12),
                   ),
                 );

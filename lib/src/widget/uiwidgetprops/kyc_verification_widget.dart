@@ -5,6 +5,7 @@
 */
 
 import 'package:sysmo_verification/kyc_validation.dart';
+import 'package:sysmo_verification/src/widget/uiwidgetprops/sysmo_alert.dart';
 
 class KYCTextBox extends StatefulWidget {
   final FormProps formProps;
@@ -32,6 +33,7 @@ class KYCTextBox extends StatefulWidget {
   final RegExp? validationPattern;
   final String token;
   final String leadId;
+  final bool obscureText;
 
   const KYCTextBox({
     super.key,
@@ -60,6 +62,7 @@ class KYCTextBox extends StatefulWidget {
     required this.aadharvaultlookupapiurl,
     required this.leadId,
     required this.token,
+    this.obscureText = false,
   });
 
   @override
@@ -587,10 +590,17 @@ class _KYCTextBoxState extends State<KYCTextBox> {
     debugPrint(
       "Button state set to: ${_buttonStateManager.text}, isSuccess: ${_buttonStateManager.isSuccess}",
     );
+    showDialog(
+      context: context,
+      builder: (_) => SysmoAlert.success(
+        message: "${Text(message)}",
+        onButtonPressed: () => Navigator.of(context).pop(),
+      ),
+    );
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    // ScaffoldMessenger.of(
+    //   context,
+    // ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Handles verification failure - calls onError callback,
@@ -604,9 +614,13 @@ class _KYCTextBoxState extends State<KYCTextBox> {
       _buttonStateManager.setError(ConstantVariable.failedString);
     });
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    showDialog(
+      context: context,
+      builder: (_) => SysmoAlert.failure(
+        message: "${Text(message)}",
+        onButtonPressed: () => Navigator.of(context).pop(),
+      ),
+    );
   }
 
   /// Builds the KYC input field with verify button
@@ -628,6 +642,7 @@ class _KYCTextBoxState extends State<KYCTextBox> {
               validationPattern: widget.validationPattern,
               disabled: _buttonStateManager.isDisabled,
               keyboardType: _getKeyboardType(widget.verificationType),
+              obscureText: widget.obscureText,
               onChange: (control) {
                 _handleInputChange(control.value ?? '');
                 widget.onChange?.call(control);

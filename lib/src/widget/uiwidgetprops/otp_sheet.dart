@@ -4,6 +4,7 @@
   @desc     : Refactored OTP bottom sheet widget
 */
 
+import 'dart:async';
 import 'package:sysmo_verification/kyc_validation.dart';
 import 'package:sysmo_verification/src/widget/uiwidgetprops/sysmo_alert.dart';
 
@@ -19,6 +20,8 @@ class OtpSheet extends StatefulWidget {
   final String aadharvaultlookupapiurl;
   final String aadharvaultassetpath;
   final String aadharvaultApiurl;
+  final String otpGenerateAssetPath;
+  final String otpGenerateApiUrl;
 
   const OtpSheet({
     super.key,
@@ -32,6 +35,8 @@ class OtpSheet extends StatefulWidget {
     required this.aadharvaultlookupapiurl,
     required this.aadharvaultassetpath,
     required this.aadharvaultApiurl,
+    required this.otpGenerateAssetPath,
+    required this.otpGenerateApiUrl,
   });
 
   @override
@@ -41,17 +46,135 @@ class OtpSheet extends StatefulWidget {
 class _OtpSheetState extends State<OtpSheet> {
   late String otpPin;
   late ValueNotifier<bool> isLoading;
+  late ValueNotifier<int> resendTimer;
+  late ValueNotifier<bool> isResending;
+  late ValueNotifier<int> otpFieldKey;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     otpPin = '';
     isLoading = ValueNotifier<bool>(false);
+    resendTimer = ValueNotifier<int>(30);
+    isResending = ValueNotifier<bool>(false);
+    otpFieldKey = ValueNotifier<int>(0);
+    _startResendTimer();
+  }
+
+  void _resetOtpField() {
+    otpPin = '';
+    otpFieldKey.value++;
+  }
+
+  void _startResendTimer() {
+    resendTimer.value = 30;
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (resendTimer.value > 0) {
+        resendTimer.value--;
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _handleResendOtp() async {
+    if (resendTimer.value > 0 || isResending.value) return;
+    if (!mounted) return;
+
+    isResending.value = true;
+
+    // Save reference before async operation to avoid deactivated widget issues
+    final currentContext = context;
+
+    try {
+      final requestBody = {
+        'aadharNumber': widget.aadhaarNumber,
+        'uniqueId': widget.leadId,
+        'token': widget.token,
+      };
+
+      final response = await KYCService().verify(
+        isOffline: widget.otpGenerateApiUrl.isEmpty ? true : widget.isOffline,
+        request: jsonEncode(requestBody),
+        assetPath: widget.otpGenerateAssetPath,
+        url: widget.otpGenerateApiUrl,
+      );
+
+      if (!mounted) return;
+
+      final responseData = response.data;
+      final otpGeneration = responseData['OtpGeneration'] ?? responseData;
+
+      if (otpGeneration != null && otpGeneration['ErrorCode'] == '000') {
+        debugPrint("OTP Resend Success");
+        isResending.value = false;
+        _startResendTimer();
+        _resetOtpField();
+
+        showDialog(
+          context: currentContext,
+          builder: (dialogContext) => Dialog(
+            backgroundColor: Colors.transparent,
+            child: SysmoAlert.success(
+              message: 'OTP sent successfully',
+              onButtonPressed: () {
+                Navigator.pop(dialogContext);
+              },
+            ),
+          ),
+        );
+      } else {
+        final errorStatus =
+            otpGeneration?['ErrorStatus'] ?? 'OTP generation failed';
+        debugPrint("OTP Resend Failed: $errorStatus");
+        isResending.value = false;
+
+        showDialog(
+          context: currentContext,
+          builder: (dialogContext) => Dialog(
+            backgroundColor: Colors.transparent,
+            child: SysmoAlert.failure(
+              message: 'Resend OTP Failed',
+              detailMessage: errorStatus,
+              viewButtonText: 'View',
+              onButtonPressed: () {
+                Navigator.pop(dialogContext);
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint("OTP Resend Error: $e");
+      isResending.value = false;
+      if (!mounted) return;
+
+      showDialog(
+        context: currentContext,
+        builder: (dialogContext) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: SysmoAlert.failure(
+            message: 'Resend OTP Failed',
+            detailMessage: e.toString(),
+            viewButtonText: 'View',
+            onButtonPressed: () {
+              Navigator.pop(dialogContext);
+            },
+          ),
+        ),
+      );
+    }
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     isLoading.dispose();
+    resendTimer.dispose();
+    isResending.dispose();
+    otpFieldKey.dispose();
     super.dispose();
   }
 
@@ -105,7 +228,22 @@ class _OtpSheetState extends State<OtpSheet> {
             debugPrint("Using aadharRefNum from OTP response: $refNumFromOtp");
             isLoading.value = false;
             if (mounted) {
-              Navigator.pop(context, response);
+              await showDialog(
+                context: context,
+                builder: (dialogContext) => Dialog(
+                  backgroundColor: Colors.transparent,
+                  child: SysmoAlert.success(
+                    message:
+                        "${ConstantVariable.otpString} ${ConstantVariable.verifiedSuccessfullyString}",
+                    onButtonPressed: () {
+                      Navigator.pop(dialogContext);
+                    },
+                  ),
+                ),
+              );
+              if (mounted) {
+                Navigator.pop(context, response);
+              }
             }
             return;
           }
@@ -153,7 +291,22 @@ class _OtpSheetState extends State<OtpSheet> {
               );
               isLoading.value = false;
               if (mounted) {
-                Navigator.pop(context, finalResponse);
+                await showDialog(
+                  context: context,
+                  builder: (dialogContext) => Dialog(
+                    backgroundColor: Colors.transparent,
+                    child: SysmoAlert.success(
+                      message:
+                          "${ConstantVariable.otpString} ${ConstantVariable.verifiedSuccessfullyString}",
+                      onButtonPressed: () {
+                        Navigator.pop(dialogContext);
+                      },
+                    ),
+                  ),
+                );
+                if (mounted) {
+                  Navigator.pop(context, finalResponse);
+                }
               }
               return;
             }
@@ -204,7 +357,22 @@ class _OtpSheetState extends State<OtpSheet> {
                 );
                 isLoading.value = false;
                 if (mounted) {
-                  Navigator.pop(context, finalResponse);
+                  await showDialog(
+                    context: context,
+                    builder: (dialogContext) => Dialog(
+                      backgroundColor: Colors.transparent,
+                      child: SysmoAlert.success(
+                        message:
+                            "${ConstantVariable.otpString} ${ConstantVariable.verifiedSuccessfullyString}",
+                        onButtonPressed: () {
+                          Navigator.pop(dialogContext);
+                        },
+                      ),
+                    ),
+                  );
+                  if (mounted) {
+                    Navigator.pop(context, finalResponse);
+                  }
                 }
                 return;
               }
@@ -239,6 +407,7 @@ class _OtpSheetState extends State<OtpSheet> {
           debugPrint("ErrorStatus: $errorStatus");
 
           isLoading.value = false;
+          _resetOtpField();
 
           if (mounted) {
             showDialog(
@@ -251,6 +420,9 @@ class _OtpSheetState extends State<OtpSheet> {
                   message:
                       "${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}:",
                   viewButtonText: "View",
+                  onButtonPressed: () {
+                    Navigator.pop(dialogcontext);
+                  },
                 ),
               ),
             );
@@ -259,6 +431,7 @@ class _OtpSheetState extends State<OtpSheet> {
       }
     } catch (e) {
       isLoading.value = false;
+      _resetOtpField();
       if (mounted) {
         debugPrint("OTP Verification Error: $e");
         showDialog(
@@ -282,35 +455,64 @@ class _OtpSheetState extends State<OtpSheet> {
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).size.height * 0.35,
-
-        top: 30,
+        top: 10,
         left: 20,
         right: 20,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Close button row
+          Align(
+            alignment: Alignment.topRight,
+            child: IconButton(
+              onPressed: () {
+
+        showDialog(
+          context: context,
+          builder: (dialogContext) => Dialog(
+            backgroundColor: Colors.transparent,
+            child: SysmoAlert.failure(
+              message: 'if you close now, the verification will be incomplete.',
+              onButtonPressed: () {
+                Navigator.pop(dialogContext);
+                Navigator.pop(context);
+              },
+            ),
+          ),
+        );              },
+              icon: const Icon(Icons.close, color: Colors.grey),
+            ),
+          ),
           const Text(
             'Enter OTP',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          ValueListenableBuilder<bool>(
-            valueListenable: isLoading,
-            builder: (context, loading, _) {
-              return OtpTextField(
-                numberOfFields: 6,
-                showFieldAsBox: true,
-                fieldWidth: 45,
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                enabled: !loading,
-                onCodeChanged: (value) {
-                  otpPin = value;
-                },
-                onSubmit: (value) {
-                  otpPin = value;
+          ValueListenableBuilder<int>(
+            valueListenable: otpFieldKey,
+            builder: (context, keyValue, _) {
+              return ValueListenableBuilder<bool>(
+                valueListenable: isLoading,
+                builder: (context, loading, _) {
+                  return KeyedSubtree(
+                    key: ValueKey(keyValue),
+                    child: OtpTextField(
+                      numberOfFields: 6,
+                      showFieldAsBox: true,
+                      fieldWidth: 45,
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      enabled: !loading,
+                      onCodeChanged: (value) {
+                        otpPin = value;
+                      },
+                      onSubmit: (value) {
+                        otpPin = value;
+                      },
+                    ),
+                  );
                 },
               );
             },
@@ -338,6 +540,42 @@ class _OtpSheetState extends State<OtpSheet> {
               },
             ),
           ),
+          const SizedBox(height: 16),
+          // Resend OTP button with timer
+          ValueListenableBuilder<int>(
+            valueListenable: resendTimer,
+            builder: (context, timerValue, _) {
+              return ValueListenableBuilder<bool>(
+                valueListenable: isResending,
+                builder: (context, resending, _) {
+                  final bool canResend = timerValue == 0 && !resending;
+                  return TextButton(
+                    onPressed: canResend ? _handleResendOtp : null,
+                    child: resending
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color.fromARGB(255, 3, 9, 110),
+                            ),
+                          )
+                        : Text(
+                            timerValue > 0
+                                ? 'Resend OTP in ${timerValue}s'
+                                : 'Resend OTP',
+                            style: TextStyle(
+                              color: canResend
+                                  ? const Color.fromARGB(255, 3, 9, 110)
+                                  : Colors.grey,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  );
+                },
+              );
+            },
+          ),
           const SizedBox(height: 20),
         ],
       ),
@@ -358,6 +596,8 @@ Future<dynamic> showOtpBottomSheet(
   required String aadharvaultlookupapiurl,
   required String aadharvaultassetpath,
   required String aadharvaultApiurl,
+  required String otpGenerateAssetPath,
+  required String otpGenerateApiUrl,
 }) async {
   return await showModalBottomSheet(
     context: context,
@@ -380,6 +620,8 @@ Future<dynamic> showOtpBottomSheet(
         aadharvaultlookupapiurl: aadharvaultlookupapiurl,
         aadharvaultassetpath: aadharvaultassetpath,
         aadharvaultApiurl: aadharvaultApiurl,
+        otpGenerateAssetPath: otpGenerateAssetPath,
+        otpGenerateApiUrl: otpGenerateApiUrl,
       ),
     ),
   );
