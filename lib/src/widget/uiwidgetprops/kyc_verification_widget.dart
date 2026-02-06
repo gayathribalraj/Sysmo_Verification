@@ -34,6 +34,7 @@ class KYCTextBox extends StatefulWidget {
   final String token;
   final String leadId;
   final bool obscureText;
+  final bool maskAadhaar;
 
   const KYCTextBox({
     super.key,
@@ -63,6 +64,7 @@ class KYCTextBox extends StatefulWidget {
     required this.leadId,
     required this.token,
     this.obscureText = false,
+    this.maskAadhaar = false,
   });
 
   @override
@@ -594,7 +596,7 @@ class _KYCTextBoxState extends State<KYCTextBox> {
       context: context,
       builder: (dialogContext) => SysmoAlert.success(
         message: message,
-        onButtonPressed: () => Navigator.pop(dialogContext)
+        onButtonPressed: () => Navigator.pop(dialogContext),
       ),
     );
 
@@ -617,8 +619,8 @@ class _KYCTextBoxState extends State<KYCTextBox> {
     showDialog(
       context: context,
       builder: (dialogContext) => SysmoAlert.failure(
-        message:message,
-        onButtonPressed: () => Navigator.pop(dialogContext)
+        message: message,
+        onButtonPressed: () => Navigator.pop(dialogContext),
       ),
     );
   }
@@ -643,6 +645,7 @@ class _KYCTextBoxState extends State<KYCTextBox> {
               disabled: _buttonStateManager.isDisabled,
               keyboardType: _getKeyboardType(widget.verificationType),
               obscureText: widget.obscureText,
+              maskAadhaar: widget.verificationType == VerificationType.aadhaar,
               onChange: (control) {
                 _handleInputChange(control.value ?? '');
                 widget.onChange?.call(control);

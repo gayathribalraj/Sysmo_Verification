@@ -113,7 +113,7 @@ class _OtpSheetState extends State<OtpSheet> {
         _startResendTimer();
         _resetOtpField();
 
-        showDialog(
+       await showDialog(
           context: currentContext,
           builder: (dialogContext) => Dialog(
             backgroundColor: Colors.transparent,
@@ -131,7 +131,7 @@ class _OtpSheetState extends State<OtpSheet> {
         debugPrint("OTP Resend Failed: $errorStatus");
         isResending.value = false;
 
-        showDialog(
+      await  showDialog(
           context: currentContext,
           builder: (dialogContext) => Dialog(
             backgroundColor: Colors.transparent,
@@ -151,7 +151,7 @@ class _OtpSheetState extends State<OtpSheet> {
       isResending.value = false;
       if (!mounted) return;
 
-      showDialog(
+    await  showDialog(
         context: currentContext,
         builder: (dialogContext) => Dialog(
           backgroundColor: Colors.transparent,
@@ -181,7 +181,7 @@ class _OtpSheetState extends State<OtpSheet> {
   Future<void> _handleOtpVerification() async {
     if (otpPin.isEmpty || otpPin.length != 6) {
       isLoading.value = false;
-      showDialog(
+     await showDialog(
         context: context,
         builder: (dialogContext) => Dialog(
           backgroundColor: Colors.transparent,
@@ -423,15 +423,16 @@ class _OtpSheetState extends State<OtpSheet> {
           _resetOtpField();
 
           if (mounted) {
-            showDialog(
+            await showDialog(
               context: context,
+              barrierDismissible: false,
               builder: (dialogcontext) => Dialog(
                 backgroundColor: Colors.transparent,
                 child: SysmoAlert.failure(
                   detailMessage:
                       "ErrorStatus: $errorStatus, ErrorCode: $errorCode",
                   message:
-                      "${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}:",
+                      "${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}",
                   viewButtonText: "View",
                   onButtonPressed: () {
                     Navigator.pop(dialogcontext);
@@ -447,15 +448,19 @@ class _OtpSheetState extends State<OtpSheet> {
       _resetOtpField();
       if (mounted) {
         debugPrint("OTP Verification Error: $e");
-        showDialog(
+        await showDialog(
           context: context,
+          barrierDismissible: false,
           builder: (dialogcontext) => Dialog(
             backgroundColor: Colors.transparent,
             child: SysmoAlert.failure(
               detailMessage: "$e",
               message:
-                  "${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}: $e",
+                  "${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}",
               viewButtonText: "View",
+              onButtonPressed: () {
+                Navigator.pop(dialogcontext);
+              },
             ),
           ),
         );
@@ -482,23 +487,28 @@ class _OtpSheetState extends State<OtpSheet> {
               valueListenable: isLoading,
               builder: (context, loading, _) {
                 return IconButton(
-                  onPressed: loading ? null : () {
-                    showDialog(
-                      context: context,
-                      builder: (dialogContext) => Dialog(
-                        backgroundColor: Colors.transparent,
-                        child: SysmoAlert.failure(
-                          message:
-                              'if you close now, the verification will be incomplete.',
-                          onButtonPressed: () {
-                            Navigator.pop(dialogContext);
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                  icon: Icon(Icons.close, color: loading ? Colors.grey.shade300 : Colors.grey),
+                  onPressed: loading
+                      ? null
+                      : () {
+                          showDialog(
+                            context: context,
+                            builder: (dialogContext) => Dialog(
+                              backgroundColor: Colors.transparent,
+                              child: SysmoAlert.failure(
+                                message:
+                                    'if you close now, the verification will be incomplete.',
+                                onButtonPressed: () {
+                                  Navigator.pop(dialogContext);
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                  icon: Icon(
+                    Icons.close,
+                    color: loading ? Colors.grey.shade300 : Colors.grey,
+                  ),
                 );
               },
             ),

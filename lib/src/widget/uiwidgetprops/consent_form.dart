@@ -107,8 +107,7 @@ class _ConsoultFormState extends State<ConsentForm> {
 
                 SizedBox(height: 20),
 
-                widget.aadhaarmethod == ConstantVariable.consentOTPString
-                    ? ElevatedButton(
+                if (widget.aadhaarmethod == ConstantVariable.consentOTPString) ElevatedButton(
                         onPressed: () async {
                           if (isChecked == true) {
                             setState(() {
@@ -142,8 +141,20 @@ class _ConsoultFormState extends State<ConsentForm> {
                                     responseData['OtpGeneration'] ??
                                     responseData;
 
-                                if (otpGeneration != null &&
-                                    otpGeneration['ErrorCode'] == '000') {
+                                debugPrint(
+                                  "Parsed OtpGeneration: $otpGeneration",
+                                );
+                                debugPrint(
+                                  "ErrorCode value: ${otpGeneration?['ErrorCode']}",
+                                );
+                                debugPrint(
+                                  "ErrorCode type: ${otpGeneration?['ErrorCode']?.runtimeType}",
+                                );
+
+                                // Check if ErrorCode is '000' for success
+                                final errorCode = otpGeneration?['ErrorCode']?.toString() ?? '';
+                                
+                                if (otpGeneration != null && errorCode == '000') {
                                   final transactionId =
                                       otpGeneration['transactionId'];
                                   debugPrint(
@@ -153,6 +164,23 @@ class _ConsoultFormState extends State<ConsentForm> {
                                   setState(() {
                                     isLoading = false;
                                   });
+
+                                  // Show success alert and wait for OK button press
+                                  await showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (dialogContext) => Dialog(
+                                      backgroundColor: Colors.transparent,
+                                      child: SysmoAlert.success(
+                                        message: 'OTP sent successfully',
+                                        onButtonPressed: () {
+                                          Navigator.pop(dialogContext);
+                                        },
+                                      ),
+                                    ),
+                                  );
+
+                                  if (!mounted) return;
 
                                   final optionOTPSheet =
                                       await showOtpBottomSheet(
@@ -208,16 +236,16 @@ class _ConsoultFormState extends State<ConsentForm> {
                                   );
 
                                   if (mounted) {
-                                    showDialog(
+                                    await showDialog(
                                       context: context,
                                       barrierDismissible: false,
                                       builder: (dialogContext) => Dialog(
                                         backgroundColor: Colors.transparent,
                                         child: SysmoAlert.failure(
-                                          message: 'OTP Generation Failed',
+                                          message: '${ConstantVariable.otpString} Generation Failed',
                                           detailMessage:
-                                              'Error Code: $errorCode\nError Status: $errorStatus',
-                                          viewButtonText: 'View Log',
+                                              'ErrorCode: $errorCode, ErrorStatus: $errorStatus',
+                                          viewButtonText: 'View',
                                           onButtonPressed: () {
                                             Navigator.pop(dialogContext);
                                           },
@@ -232,7 +260,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                                   isLoading = false;
                                 });
                                 if (mounted) {
-                                  showDialog(
+                                 await showDialog(
                                     context: context,
                                     barrierDismissible: false,
                                     builder: (dialogContext) => Dialog(
@@ -255,7 +283,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                               });
                               debugPrint("OTP Generation Error: $error");
                               if (mounted) {
-                                showDialog(
+                               await  showDialog(
                                   context: context,
                                   barrierDismissible: false,
                                   builder: (dialogContext) => Dialog(
@@ -285,8 +313,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                             : Text(
                                 ConstantVariable.consentOTPVerificationString,
                               ),
-                      )
-                    : ElevatedButton(
+                      ) else ElevatedButton(
                         onPressed: () async {},
                         child: Text(ConstantVariable.consentBioMetricString),
                       ),
