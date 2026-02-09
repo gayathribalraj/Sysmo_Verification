@@ -313,8 +313,25 @@ class _KYCTextBoxState extends State<KYCTextBox> {
       debugPrint("ConsentForm data not null: ${consentResponse != null}");
 
       if (consentResponse != null && consentResponse.data != null) {
-        // Extract otpValidationNew from response.data
         final responseData = consentResponse.data;
+
+        // Check if this is a biometric response
+        final responseType = responseData['type'];
+        if (responseType == ConstantVariable.consentBiometricString) {
+          // Biometric scenario: pass leadId, aadharNumber, type to onSuccess
+          debugPrint("Biometric Verification - passing data to onSuccess");
+          debugPrint("leadId: ${responseData['leadId']}");
+          debugPrint("aadharNumber: ${responseData['aadharNumber']}");
+          debugPrint("type: ${responseData['type']}");
+
+          _handleVerificationSuccess(
+            'Aadhaar ID ${ConstantVariable.verifiedSuccessfullyString}',
+            consentResponse,
+          );
+          return;
+        }
+
+        // OTP scenario: Extract otpValidationNew from response.data
         final otpValidation = responseData['otpValidationNew'] ?? responseData;
 
         debugPrint("otpValidation extracted: $otpValidation");

@@ -1,6 +1,7 @@
 class ConstantVariable {
   //Consent Form Strings
   static const String consentOTPString = 'otp';
+  static const String consentBiometricString = 'biometric';
 
   static const String consentOTPGendrateFailedString = "OTP Generate failed!!!";
   static const String consentOTPVerificationString = "OTP Verification";
@@ -28,7 +29,7 @@ class ConstantVariable {
   static const String noDataProviderString =
       "No valid data source provided for verification";
 
-  static const String   verificationFaildString = "Verification Failed";
+  static const String verificationFaildString = "Verification Failed";
   static const String verifiedSuccessfullyString = "Verified Successfully";
   static const String verifiedString = "Verified";
   static const String verifyOTPString = "Verify OTP";

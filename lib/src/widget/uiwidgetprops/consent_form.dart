@@ -107,191 +107,143 @@ class _ConsoultFormState extends State<ConsentForm> {
 
                 SizedBox(height: 20),
 
-                if (widget.aadhaarmethod == ConstantVariable.consentOTPString) ElevatedButton(
-                        onPressed: () async {
-                          if (isChecked == true) {
-                            setState(() {
-                              isLoading = true;
-                            });
+                if (widget.aadhaarmethod == ConstantVariable.consentOTPString)
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (isChecked == true) {
+                        setState(() {
+                          isLoading = true;
+                        });
 
-                            try {
-                              debugPrint("requestBody here");
-                              // Build OTP generation request
-                              final requestBody = {
-                                'aadharNumber': widget.aadhaarNumber,
-                                'uniqueId': widget.leadId,
-                                'token': widget.token,
-                              };
-                              debugPrint("requestBody here $requestBody");
+                        try {
+                          debugPrint("requestBody here");
+                          // Build OTP generation request
+                          final requestBody = {
+                            'aadharNumber': widget.aadhaarNumber,
+                            'uniqueId': widget.leadId,
+                            'token': widget.token,
+                          };
+                          debugPrint("requestBody here $requestBody");
 
-                              final response = await KYCService().verify(
-                                isOffline: widget.isOffline,
-                                request: jsonEncode(requestBody),
-                                assetPath: widget.assetPath,
-                                url: widget.url,
+                          final response = await KYCService().verify(
+                            isOffline: widget.isOffline,
+                            request: jsonEncode(requestBody),
+                            assetPath: widget.assetPath,
+                            url: widget.url,
+                          );
+
+                          debugPrint("OTP Generation Response: $response");
+                          // await Future.delayed(const Duration(seconds: 1));
+
+                          if (response.toString().isNotEmpty) {
+                            // Parse OtpGeneration response - handle both nested and root level response
+                            final responseData = response.data;
+                            final otpGeneration =
+                                responseData['OtpGeneration'] ?? responseData;
+
+                            debugPrint("Parsed OtpGeneration: $otpGeneration");
+                            debugPrint(
+                              "ErrorCode value: ${otpGeneration?['ErrorCode']}",
+                            );
+                            debugPrint(
+                              "ErrorCode type: ${otpGeneration?['ErrorCode']?.runtimeType}",
+                            );
+
+                            // Check if ErrorCode is '000' for success
+                            final errorCode =
+                                otpGeneration?['ErrorCode']?.toString() ?? '';
+
+                            if (otpGeneration != null && errorCode == '000') {
+                              final transactionId =
+                                  otpGeneration['transactionId'];
+                              debugPrint(
+                                "OTP Generation Success - TransactionId: $transactionId",
                               );
 
-                              debugPrint("OTP Generation Response: $response");
-                              // await Future.delayed(const Duration(seconds: 1));
+                              setState(() {
+                                isLoading = false;
+                              });
 
-                              if (response.toString().isNotEmpty) {
-                                // Parse OtpGeneration response - handle both nested and root level response
-                                final responseData = response.data;
-                                final otpGeneration =
-                                    responseData['OtpGeneration'] ??
-                                    responseData;
+                              // Show success alert and wait for OK button press
+                              await showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (dialogContext) => Dialog(
+                                  backgroundColor: Colors.transparent,
+                                  child: SysmoAlert.success(
+                                    message: 'OTP sent successfully',
+                                    onButtonPressed: () {
+                                      Navigator.pop(dialogContext);
+                                    },
+                                  ),
+                                ),
+                              );
 
-                                debugPrint(
-                                  "Parsed OtpGeneration: $otpGeneration",
-                                );
-                                debugPrint(
-                                  "ErrorCode value: ${otpGeneration?['ErrorCode']}",
-                                );
-                                debugPrint(
-                                  "ErrorCode type: ${otpGeneration?['ErrorCode']?.runtimeType}",
-                                );
+                              if (!mounted) return;
 
-                                // Check if ErrorCode is '000' for success
-                                final errorCode = otpGeneration?['ErrorCode']?.toString() ?? '';
-                                
-                                if (otpGeneration != null && errorCode == '000') {
-                                  final transactionId =
-                                      otpGeneration['transactionId'];
-                                  debugPrint(
-                                    "OTP Generation Success - TransactionId: $transactionId",
-                                  );
+                              final optionOTPSheet = await showOtpBottomSheet(
+                                context,
+                                widget.aadhaarResponseassetspath!,
+                                widget.aadhaarResponseApiurl!,
+                                widget.aadhaarNumber,
+                                widget.leadId,
+                                widget.token,
+                                isOffline: widget.isOffline,
+                                aadharvaultlookupassetpath:
+                                    widget.aadharvaultlookupassetpath,
+                                aadharvaultlookupapiurl:
+                                    widget.aadharvaultlookupapiurl,
+                                aadharvaultassetpath:
+                                    widget.aadharvaultassetpath,
+                                aadharvaultApiurl: widget.aadharvaultApiurl,
+                                otpGenerateAssetPath: widget.assetPath,
+                                otpGenerateApiUrl: widget.url,
+                              );
 
-                                  setState(() {
-                                    isLoading = false;
-                                  });
+                              debugPrint(
+                                "OTP Verification Response: $optionOTPSheet",
+                              );
+                              debugPrint(
+                                "OTP Verification Response Data: ${optionOTPSheet?.data}",
+                              );
 
-                                  // Show success alert and wait for OK button press
-                                  await showDialog(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (dialogContext) => Dialog(
-                                      backgroundColor: Colors.transparent,
-                                      child: SysmoAlert.success(
-                                        message: 'OTP sent successfully',
-                                        onButtonPressed: () {
-                                          Navigator.pop(dialogContext);
-                                        },
-                                      ),
-                                    ),
-                                  );
-
-                                  if (!mounted) return;
-
-                                  final optionOTPSheet =
-                                      await showOtpBottomSheet(
-                                        context,
-                                        widget.aadhaarResponseassetspath!,
-                                        widget.aadhaarResponseApiurl!,
-                                        widget.aadhaarNumber,
-                                        widget.leadId,
-                                        widget.token,
-                                        isOffline: widget.isOffline,
-                                        aadharvaultlookupassetpath:
-                                            widget.aadharvaultlookupassetpath,
-                                        aadharvaultlookupapiurl:
-                                            widget.aadharvaultlookupapiurl,
-                                        aadharvaultassetpath:
-                                            widget.aadharvaultassetpath,
-                                        aadharvaultApiurl:
-                                            widget.aadharvaultApiurl,
-                                        otpGenerateAssetPath: widget.assetPath,
-                                        otpGenerateApiUrl: widget.url,
-                                      );
-
-                                  debugPrint(
-                                    "OTP Verification Response: $optionOTPSheet",
-                                  );
-                                  debugPrint(
-                                    "OTP Verification Response Data: ${optionOTPSheet?.data}",
-                                  );
-
-                                  // Return the OTP verification response (vault operations done in OTP sheet)
-                                  if (optionOTPSheet != null && mounted) {
-                                    Navigator.pop(context, optionOTPSheet);
-                                    return;
-                                  }
-                                } else {
-                                  if (!mounted) return;
-                                  setState(() {
-                                    isLoading = false;
-                                  });
-
-                                  // Get error message from response - check both nested and root level
-                                  final errorStatus =
-                                      otpGeneration?['ErrorStatus'] ??
-                                      responseData['ErrorStatus'] ??
-                                      ConstantVariable
-                                          .consentOTPGendrateFailedString;
-                                  final errorCode =
-                                      otpGeneration?['ErrorCode'] ??
-                                      responseData['ErrorCode'] ??
-                                      '';
-                                  debugPrint(
-                                    "OTP Generation Failed - ErrorCode: $errorCode, ErrorStatus: $errorStatus",
-                                  );
-
-                                  if (mounted) {
-                                    await showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (dialogContext) => Dialog(
-                                        backgroundColor: Colors.transparent,
-                                        child: SysmoAlert.failure(
-                                          message: '${ConstantVariable.otpString} Generation Failed',
-                                          detailMessage:
-                                              'ErrorCode: $errorCode, ErrorStatus: $errorStatus',
-                                          viewButtonText: 'View',
-                                          onButtonPressed: () {
-                                            Navigator.pop(dialogContext);
-                                          },
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                }
-                              } else {
-                                if (!mounted) return;
-                                setState(() {
-                                  isLoading = false;
-                                });
-                                if (mounted) {
-                                 await showDialog(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (dialogContext) => Dialog(
-                                      backgroundColor: Colors.transparent,
-                                      child: SysmoAlert.failure(
-                                        message: ConstantVariable
-                                            .consentOTPGendrateFailedString,
-                                        onButtonPressed: () {
-                                          Navigator.pop(dialogContext);
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                }
+                              // Return the OTP verification response (vault operations done in OTP sheet)
+                              if (optionOTPSheet != null && mounted) {
+                                Navigator.pop(context, optionOTPSheet);
+                                return;
                               }
-                            } catch (error) {
+                            } else {
                               if (!mounted) return;
                               setState(() {
                                 isLoading = false;
                               });
-                              debugPrint("OTP Generation Error: $error");
+
+                              // Get error message from response - check both nested and root level
+                              final errorStatus =
+                                  otpGeneration?['ErrorStatus'] ??
+                                  responseData['ErrorStatus'] ??
+                                  ConstantVariable
+                                      .consentOTPGendrateFailedString;
+                              final errorCode =
+                                  otpGeneration?['ErrorCode'] ??
+                                  responseData['ErrorCode'] ??
+                                  '';
+                              debugPrint(
+                                "OTP Generation Failed - ErrorCode: $errorCode, ErrorStatus: $errorStatus",
+                              );
+
                               if (mounted) {
-                               await  showDialog(
+                                await showDialog(
                                   context: context,
                                   barrierDismissible: false,
                                   builder: (dialogContext) => Dialog(
                                     backgroundColor: Colors.transparent,
                                     child: SysmoAlert.failure(
-                                      message: 'Aadhaar Verification Failed',
-                                      detailMessage: error.toString(),
-                                      viewButtonText: 'View Log',
+                                      message:
+                                          '${ConstantVariable.otpString} Generation Failed',
+                                      detailMessage:
+                                          'ErrorCode: $errorCode, ErrorStatus: $errorStatus',
+                                      viewButtonText: 'View',
                                       onButtonPressed: () {
                                         Navigator.pop(dialogContext);
                                       },
@@ -300,23 +252,81 @@ class _ConsoultFormState extends State<ConsentForm> {
                                 );
                               }
                             }
-                          }
-                        },
-                        child: isLoading
-                            ? SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                          } else {
+                            if (!mounted) return;
+                            setState(() {
+                              isLoading = false;
+                            });
+                            if (mounted) {
+                              await showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (dialogContext) => Dialog(
+                                  backgroundColor: Colors.transparent,
+                                  child: SysmoAlert.failure(
+                                    message: ConstantVariable
+                                        .consentOTPGendrateFailedString,
+                                    onButtonPressed: () {
+                                      Navigator.pop(dialogContext);
+                                    },
+                                  ),
                                 ),
-                              )
-                            : Text(
-                                ConstantVariable.consentOTPVerificationString,
+                              );
+                            }
+                          }
+                        } catch (error) {
+                          if (!mounted) return;
+                          setState(() {
+                            isLoading = false;
+                          });
+                          debugPrint("OTP Generation Error: $error");
+                          if (mounted) {
+                            await showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (dialogContext) => Dialog(
+                                backgroundColor: Colors.transparent,
+                                child: SysmoAlert.failure(
+                                  message: 'Aadhaar Verification Failed',
+                                  detailMessage: error.toString(),
+                                  viewButtonText: 'View Log',
+                                  onButtonPressed: () {
+                                    Navigator.pop(dialogContext);
+                                  },
+                                ),
                               ),
-                      ) else ElevatedButton(
-                        onPressed: () async {},
-                        child: Text(ConstantVariable.consentBioMetricString),
-                      ),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    child: isLoading
+                        ? SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(ConstantVariable.consentOTPVerificationString),
+                  )
+                else
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (isChecked == true) {
+                        // For biometric, pass only leadId, aadharNumber and type
+                        final biometricResponse = Response(
+                          requestOptions: RequestOptions(path: ''),
+                          data: {
+                            'leadId': widget.leadId,
+                            'aadharNumber': widget.aadhaarNumber,
+                            'type': ConstantVariable.consentBiometricString,
+                          },
+                          statusCode: 200,
+                        );
+                        Navigator.pop(context, biometricResponse);
+                      }
+                    },
+                    child: Text(ConstantVariable.consentBioMetricString),
+                  ),
               ],
             ),
           ),
