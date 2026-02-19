@@ -69,6 +69,8 @@ class _KYCInputFieldState extends State<KYCInputField> {
   late bool _isObscured;
   final TextEditingController _maskedController = TextEditingController();
   bool _isFocused = false;
+  final FocusNode _aadhaarFocusNode = FocusNode();
+
 
   @override
   void initState() {
@@ -78,7 +80,10 @@ class _KYCInputFieldState extends State<KYCInputField> {
 
   @override
   void dispose() {
+      _aadhaarFocusNode.dispose();
+
     _maskedController.dispose();
+    
     super.dispose();
   }
 
@@ -133,6 +138,7 @@ class _KYCInputFieldState extends State<KYCInputField> {
   /// Builds the regular text field without masking
   Widget _buildRegularTextField() {
     return ReactiveTextField<String>(
+      focusNode: _aadhaarFocusNode,
       autofocus: false,
       keyboardType: widget.keyboardType,
       formControlName: widget.formProps.formControlName,
@@ -195,6 +201,7 @@ class _KYCInputFieldState extends State<KYCInputField> {
             setState(() {
               _isFocused = true;
             });
+             _aadhaarFocusNode.requestFocus();
           },
           child: Stack(
             children: [
@@ -210,6 +217,7 @@ class _KYCInputFieldState extends State<KYCInputField> {
                     }
                   },
                   child: ReactiveTextField<String>(
+                    focusNode: _aadhaarFocusNode,
                     autofocus: false,
                     keyboardType: TextInputType.number,
                     formControlName: widget.formProps.formControlName,
@@ -265,10 +273,13 @@ class _KYCInputFieldState extends State<KYCInputField> {
               ),
               // Masked display field (visible when not focused)
               if (!_isFocused)
-                IgnorePointer(
+                MouseRegion(
+                  cursor: SystemMouseCursors.text,
                   child: TextField(
                     controller: TextEditingController(text: displayValue),
                     readOnly: true,
+                    showCursor: true,
+                    cursorColor: Colors.black,
                     style:
                         widget.styleProps.textStyle ??
                         const TextStyle(fontSize: 14),
@@ -297,6 +308,12 @@ class _KYCInputFieldState extends State<KYCInputField> {
                             fontSize: 12,
                           ),
                         ),
+                    onTap: () {
+                      setState(() {
+                        _isFocused = true;
+                      });
+                      _aadhaarFocusNode.requestFocus();
+                    },
                   ),
                 ),
             ],

@@ -317,7 +317,7 @@ class _KYCTextBoxState extends State<KYCTextBox> {
 
         // Check if this is a biometric response
         final responseType = responseData['type'];
-        if (responseType == ConstantVariable.consentBiometricString) {
+        if (responseType == ConstantVariable.consentBioMetricString) {
           // Biometric scenario: pass leadId, aadharNumber, type to onSuccess
           debugPrint("Biometric Verification - passing data to onSuccess");
           debugPrint("leadId: ${responseData['leadId']}");

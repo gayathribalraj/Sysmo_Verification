@@ -1,11 +1,11 @@
 class ConstantVariable {
   //Consent Form Strings
   static const String consentOTPString = 'otp';
-  static const String consentBiometricString = 'biometric';
+  // static const String consentBiometricString = 'biometric';
 
   static const String consentOTPGendrateFailedString = "OTP Generate failed!!!";
   static const String consentOTPVerificationString = "OTP Verification";
-  static const String consentBioMetricString = "Bio-Metric";
+  static const String consentBioMetricString = "Bio";
   static const String otpString = "OTP";
 
   static const String consentOTPSendSuccessfullyString =
