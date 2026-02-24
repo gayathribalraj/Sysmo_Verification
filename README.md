@@ -28,7 +28,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  sysmo_verification: ^0.0.13
+  sysmo_verification: ^0.0.14
 ```
 
 ### Step 2: Install packages
