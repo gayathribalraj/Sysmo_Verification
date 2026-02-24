@@ -86,10 +86,12 @@ class _OtpSheetState extends State<OtpSheet> {
   }
 
   Future<void> _handleResendOtp() async {
-    if (resendTimer.value > 0 || isResending.value) return;
+    // if (resendTimer.value > 0 || isResending.value) return;
+     if (isResending.value) return;
     if (!mounted) return;
 
     isResending.value = true;
+        // isResending.value = false;
 
     // Save reference before async operation to avoid deactivated widget issues
     final currentContext = context;
@@ -642,11 +644,12 @@ class _OtpSheetState extends State<OtpSheet> {
               // Resend OTP section
               ValueListenableBuilder<int>(
                 valueListenable: resendTimer,
-                builder: (context, timerValue, _) {
+                // builder: (context, timerValue, _) {
+                  builder: (context, _, _) {
                   return ValueListenableBuilder<bool>(
                     valueListenable: isResending,
                     builder: (context, resending, _) {
-                      final bool canResend = timerValue == 0 && !resending;
+                      // final bool canResend = timerValue == 0 && !resending;
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -668,7 +671,9 @@ class _OtpSheetState extends State<OtpSheet> {
                             )
                           else
                             GestureDetector(
-                              onTap: canResend ? _handleResendOtp : null,
+                              onTap:
+                                  // canResend ?
+                                  _handleResendOtp,
                               child:
                                   // timerValue > 0
                                   //     ? Container(
