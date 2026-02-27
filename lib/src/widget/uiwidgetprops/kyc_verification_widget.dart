@@ -327,6 +327,7 @@ class _KYCTextBoxState extends State<KYCTextBox> {
           _handleVerificationSuccess(
             'Aadhaar ID ${ConstantVariable.verifiedSuccessfullyString}',
             consentResponse,
+            showSuccessDialog: false,
           );
           return;
         }
@@ -580,12 +581,13 @@ class _KYCTextBoxState extends State<KYCTextBox> {
     _handleVerificationSuccess(
       'Aadhaar ID ${ConstantVariable.verifiedSuccessfullyString}',
       finalResponse,
+      showSuccessDialog: false,
     );
   }
 
   /// Handles successful verification - calls onSuccess callback,
   /// updates button state to 'verified', and shows success snackbar
-  void _handleVerificationSuccess(String message, Response response) {
+  void _handleVerificationSuccess(String message, Response response, {bool showSuccessDialog = true}) {
     debugPrint(
       "_handleVerificationSuccess called - mounted: $mounted, _verificationCompleted: $_verificationCompleted",
     );
@@ -609,13 +611,15 @@ class _KYCTextBoxState extends State<KYCTextBox> {
     debugPrint(
       "Button state set to: ${_buttonStateManager.text}, isSuccess: ${_buttonStateManager.isSuccess}",
     );
-    showDialog(
-      context: context,
-      builder: (dialogContext) => SysmoAlert.success(
-        message: message,
-        onButtonPressed: () => Navigator.pop(dialogContext),
-      ),
-    );
+    if (showSuccessDialog) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => SysmoAlert.success(
+          message: message,
+          onButtonPressed: () => Navigator.pop(dialogContext),
+        ),
+      );
+    }
 
     // ScaffoldMessenger.of(
     //   context,
@@ -662,7 +666,7 @@ class _KYCTextBoxState extends State<KYCTextBox> {
               disabled: _buttonStateManager.isDisabled,
               keyboardType: _getKeyboardType(widget.verificationType),
               obscureText: widget.obscureText,
-              maskAadhaar: widget.verificationType == VerificationType.aadhaar,
+              maskAadhaar: widget.maskAadhaar,
               onChange: (control) {
                 _handleInputChange(control.value ?? '');
                 widget.onChange?.call(control);
