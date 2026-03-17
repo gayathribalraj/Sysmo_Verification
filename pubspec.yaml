@@ -1,9 +1,9 @@
-name: kyc_verification
+name: sysmo_verification
 description: "A reusable KYC verification Flutter package"
-version: 0.0.1
+version: 0.0.16
 
-homepage: https://github.com/gayathribalraj/kyc_package
-repository: https://github.com/gayathribalraj/kyc_package
+homepage: https://github.com/gayathribalraj/Sysmo_Verification
+repository: https://github.com/gayathribalraj/Sysmo_Verification
 
 environment:
   sdk: ^3.8.1
@@ -15,6 +15,7 @@ dependencies:
   equatable: ^2.0.7
   flutter:
     sdk: flutter
+  flutter_dotenv: ^5.1.0
   flutter_bloc: ^9.1.1
   flutter_otp_text_field: ^1.5.1+1
   pretty_dio_logger: ^1.4.0
@@ -26,8 +27,5 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 flutter:
- # Example for asset usage (uncomment if needed)
-  # assets:
-  #   - assets/data/voter_validation.json
 
 

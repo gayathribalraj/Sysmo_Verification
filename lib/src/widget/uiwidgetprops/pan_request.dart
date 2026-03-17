@@ -1,4 +1,4 @@
-import 'package:kyc_verification/kyc_validation.dart';
+import 'package:sysmo_verification/kyc_validation.dart';
 
 
 
@@ -38,7 +38,7 @@ class PanidRequest {
   @override
   String toString() => 'PanidRequest(: $pan, consent: $consent)';
 
-//Added missing equality operator to satisfy dart analyzer
+//equality operator to satisfy dart analyzer
 
   @override
   bool operator ==(Object other) {

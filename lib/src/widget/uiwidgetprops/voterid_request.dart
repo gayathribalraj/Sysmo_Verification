@@ -1,4 +1,4 @@
-import 'package:kyc_verification/kyc_validation.dart';
+import 'package:sysmo_verification/kyc_validation.dart';
 
 class VoteridRequest {
  final String epicNo ;
@@ -44,7 +44,7 @@ class VoteridRequest {
   @override
   String toString() => 'VoteridRequest(: $epicNo, consent: $consent)';
   
-//Added missing equality operator to satisfy dart analyzer
+// equality operator to satisfy dart analyzer
    @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
