@@ -471,6 +471,7 @@ class _ConsoultFormState extends State<ConsentForm> {
           });
 
           // Show success alert and wait for OK button press
+          if (!mounted) return;
           await showDialog(
             context: context,
             barrierDismissible: false,
@@ -528,23 +529,22 @@ class _ConsoultFormState extends State<ConsentForm> {
             "OTP Generation Failed - ErrorCode: $errCode, ErrorStatus: $errorStatus",
           );
 
-          if (mounted) {
-            await showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (dialogContext) => Dialog(
-                backgroundColor: Colors.transparent,
-                child: SysmoAlert.failure(
-                  message: '${ConstantVariable.otpString} Generation Failed',
-                  detailMessage: 'ErrorCode: $errCode, ErrorStatus: $errorStatus',
-                  viewButtonText: 'View',
-                  onButtonPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
-                ),
+          if (!mounted) return;
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogContext) => Dialog(
+              backgroundColor: Colors.transparent,
+              child: SysmoAlert.failure(
+                message: '${ConstantVariable.otpString} Generation Failed',
+                detailMessage: 'ErrorCode: $errCode, ErrorStatus: $errorStatus',
+                viewButtonText: 'View',
+                onButtonPressed: () {
+                  Navigator.pop(dialogContext);
+                },
               ),
-            );
-          }
+            ),
+          );
         }
       } else {
         if (!mounted) return;
@@ -573,23 +573,22 @@ class _ConsoultFormState extends State<ConsentForm> {
         isLoading = false;
       });
       debugPrint("OTP Generation Error: $error");
-      if (mounted) {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => Dialog(
-            backgroundColor: Colors.transparent,
-            child: SysmoAlert.failure(
-              message: 'Aadhaar Verification Failed',
-              detailMessage: error.toString(),
-              viewButtonText: 'View Log',
-              onButtonPressed: () {
-                Navigator.pop(dialogContext);
-              },
-            ),
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: SysmoAlert.failure(
+            message: 'Aadhaar Verification Failed',
+            detailMessage: error.toString(),
+            viewButtonText: 'View Log',
+            onButtonPressed: () {
+              Navigator.pop(dialogContext);
+            },
           ),
-        );
-      }
+        ),
+      );
     }
   }
 }

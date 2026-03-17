@@ -7,7 +7,7 @@
 import 'dart:math' as Math;
 
 import 'package:sysmo_verification/kyc_validation.dart';
-import 'package:sysmo_verification/src/Utils/aesUtils.dart';
+import 'package:sysmo_verification/src/Utils/aes_utils.dart';
 
 /// HttpHeaderConfig holds default headers for API requests
 class HttpHeaderConfig {
@@ -147,9 +147,6 @@ class TokenInterceptor extends Interceptor {
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     try {
-      // Get request token
-      String? requestToken = response.requestOptions.headers['token'];
-
       // Decrypt body
       final decryptedBody = _decryptResponseBody(response.data);
       if (decryptedBody != null) {

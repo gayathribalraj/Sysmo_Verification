@@ -86,15 +86,10 @@ class _OtpSheetState extends State<OtpSheet> {
   }
 
   Future<void> _handleResendOtp() async {
-    // if (resendTimer.value > 0 || isResending.value) return;
-     if (isResending.value) return;
+    if (isResending.value) return;
     if (!mounted) return;
 
     isResending.value = true;
-        // isResending.value = false;
-
-    // Save reference before async operation to avoid deactivated widget issues
-    final currentContext = context;
 
     try {
       final requestBody = {
@@ -121,8 +116,9 @@ class _OtpSheetState extends State<OtpSheet> {
         _startResendTimer();
         _resetOtpField();
 
+        if (!mounted) return;
         await showDialog(
-          context: currentContext,
+          context: context,
           builder: (dialogContext) => Dialog(
             backgroundColor: Colors.transparent,
             child: SysmoAlert.success(
@@ -139,8 +135,9 @@ class _OtpSheetState extends State<OtpSheet> {
         debugPrint("OTP Resend Failed: $errorStatus");
         isResending.value = false;
 
+        if (!mounted) return;
         await showDialog(
-          context: currentContext,
+          context: context,
           builder: (dialogContext) => Dialog(
             backgroundColor: Colors.transparent,
             child: SysmoAlert.failure(
@@ -160,7 +157,7 @@ class _OtpSheetState extends State<OtpSheet> {
       if (!mounted) return;
 
       await showDialog(
-        context: currentContext,
+        context: context,
         builder: (dialogContext) => Dialog(
           backgroundColor: Colors.transparent,
           child: SysmoAlert.failure(
