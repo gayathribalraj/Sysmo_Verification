@@ -569,26 +569,6 @@ class _KYCTextBoxState extends State<KYCTextBox> {
     Map<String, dynamic> vaultData,
     String aadhaarRefNumber,
   ) {
-    // Check for duplicate BEFORE proceeding
-
-    if (_isDuplicatedAadhaarRefNumbers(aadhaarRefNumber)) {
-      showDialog(
-        context: context,
-        builder: (dialogContext) => SysmoAlert.warning(
-          message:
-              "This Aadhaar reference number is already in use. Please use a different Aadhar number. ",
-          onButtonPressed: () {
-            Navigator.pop(dialogContext);
-            setState(() {
-            _buttonStateManager.reset(widget.buttonProps.label);
-            _currentInput = '';  
-            
-            });
-          },
-        ),
-      );
-      return;
-    }
     final finalResponse = Response(
       requestOptions: RequestOptions(path: ''),
       data: {
@@ -728,13 +708,4 @@ class _KYCTextBoxState extends State<KYCTextBox> {
     };
   }
 
-  /// Checks if Aadhaar reference number is duplicate
-  /// Returns true if duplicate found, false otherwise
-  bool _isDuplicatedAadhaarRefNumbers(String refNumbers) {
-    if (widget.usedAadhaarRefNumbers == null ||
-        widget.usedAadhaarRefNumbers!.isEmpty) {
-      return false;
-    }
-    return widget.usedAadhaarRefNumbers!.contains(refNumbers);
-  }
 }

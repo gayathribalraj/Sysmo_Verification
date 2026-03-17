@@ -4,7 +4,10 @@
   @desc     : Refactored ApiClient with improved error handling and dependency injection
 */
 
+import 'dart:math' as Math;
+
 import 'package:sysmo_verification/kyc_validation.dart';
+import 'package:sysmo_verification/src/Utils/aesUtils.dart';
 
 /// HttpHeaderConfig holds default headers for API requests
 class HttpHeaderConfig {
@@ -54,6 +57,8 @@ class ApiClient {
         ),
       );
     }
+
+    dio.interceptors.add(TokenInterceptor());
   }
 
   /// Perform POST request with optional data
@@ -80,4 +85,132 @@ class ApiClient {
 
   @Deprecated('Use get() instead')
   Future<Response> callGet(String url) => get(url);
+}
+
+String? expectedTokenValue;
+
+String generateToken() {
+  var timestamp = DateTime.now();
+  var ranNum = Math.Random().nextInt(90000000) + 10000000;
+  String token = "${timestamp.toString()}_${ranNum.toString()}";
+  expectedTokenValue = token;
+  return encryptString(inputText: token);
+}
+
+Map<String, dynamic> _encryptRequestBody(Map<String, dynamic> body) {
+  final jsonBody = jsonEncode(body);
+  final cipherText = encryptString(inputText: jsonBody);
+  return {'data': cipherText};
+}
+
+Map<String, dynamic>? _decryptResponseBody(dynamic data) {
+  try {
+    if (data is Map && data['data'] is String) {
+      final decrypted = decryptString(encryptedText: data['data']);
+      final decoded = jsonDecode(decrypted);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    }
+  } catch (_) {}
+  return null;
+}
+
+// Custom Interceptor for Token Handling
+class TokenInterceptor extends Interceptor {
+  @override
+  Future<void> onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    // Generate token
+    String token = generateToken();
+
+    // Add token to headers
+    options.headers['token'] = token;
+
+    // Add encrypted token to body and encrypt body (for JSON requests)
+    if (options.data is Map<String, dynamic>) {
+      final body = Map<String, dynamic>.from(options.data);
+      body['token'] = token;
+      // body['token'] = encryptString(inputText: token);
+      options.data = _encryptRequestBody(body);
+    } else if (options.data is FormData) {
+      // FormData is not encrypted here
+      options.data.fields.add(
+        // MapEntry('token', encryptString(inputText: token)),
+        MapEntry('token', token),
+      );
+    }
+
+    handler.next(options);
+  }
+
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    try {
+      // Get request token
+      String? requestToken = response.requestOptions.headers['token'];
+
+      // Decrypt body
+      final decryptedBody = _decryptResponseBody(response.data);
+      if (decryptedBody != null) {
+        response.data = decryptedBody;
+      }
+
+      // Getting response token (from decrypted body or header)
+      String? responseToken;
+      final tokenSource = decryptedBody ?? response.data;
+
+      if (response.realUri.path.contains('/getMpinDetails') &&
+          tokenSource is Map &&
+          tokenSource['map'] is Map) {
+        final res = tokenSource['map'] as Map;
+        if (res['token'] != null) {
+          responseToken = res['token'].toString();
+        } else if (response.headers['token'] != null &&
+            response.headers['token']!.isNotEmpty) {
+          responseToken = response.headers['token']!.first;
+        }
+      } else {
+        if (tokenSource is Map && tokenSource['token'] != null) {
+          responseToken = tokenSource['token'].toString();
+        } else if (response.headers['token'] != null &&
+            response.headers['token']!.isNotEmpty) {
+          responseToken = response.headers['token']!.first;
+        }
+      }
+
+      // Decrypting response token for comparison
+      String? decryptedResponseToken = responseToken != null
+          ? decryptString(encryptedText: responseToken)
+          : null;
+
+      if (decryptedResponseToken != null &&
+          decryptedResponseToken == expectedTokenValue) {
+        handler.next(response);
+      } else {
+        handler.reject(
+          DioException(
+            requestOptions: response.requestOptions,
+            error: 'TokenMismatchException',
+            message: 'Token does not match expected value',
+            response: response,
+          ),
+        );
+      }
+    } catch (e) {
+      handler.reject(
+        DioException(
+          requestOptions: response.requestOptions,
+          error: 'TokenCheckException',
+          message: 'Error during token check: $e',
+          response: response,
+        ),
+      );
+    }
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    handler.next(err);
+  }
 }

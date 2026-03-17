@@ -9,4 +9,5 @@ class AppConstant {
   static final RegExp passportPattern = RegExp(r'^[A-Z][1-9][0-9]{6}$');
 
   static final RegExp aadhaarPattern = RegExp('[0-9]{12}');
+  static const String encKey = 'sysarc@1234INFO@';
 }
