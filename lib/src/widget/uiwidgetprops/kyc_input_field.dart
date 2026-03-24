@@ -221,6 +221,7 @@ class _KYCInputFieldState extends State<KYCInputField> {
                     autofocus: false,
                     keyboardType: TextInputType.number,
                     formControlName: widget.formProps.formControlName,
+                    obscureText: _isObscured,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(12),
@@ -256,6 +257,15 @@ class _KYCInputFieldState extends State<KYCInputField> {
                             color: Colors.red,
                             fontSize: 12,
                           ),
+                          suffixIcon: widget.obscureText
+                              ? IconButton(
+                                  icon: Icon(
+                                    _isObscured ? Icons.visibility_off : Icons.visibility,
+                                    color: Colors.grey,
+                                  ),
+                                  onPressed: _toggleObscure,
+                                )
+                              : null,
                         ),
                     validationMessages: widget.formProps.validator != null
                         ? {
@@ -280,6 +290,7 @@ class _KYCInputFieldState extends State<KYCInputField> {
                     readOnly: true,
                     showCursor: true,
                     cursorColor: Colors.black,
+                    obscureText: _isObscured,
                     style:
                         widget.styleProps.textStyle ??
                         const TextStyle(fontSize: 14),
@@ -307,6 +318,15 @@ class _KYCInputFieldState extends State<KYCInputField> {
                             color: Colors.red,
                             fontSize: 12,
                           ),
+                          suffixIcon: widget.obscureText
+                              ? IconButton(
+                                  icon: Icon(
+                                    _isObscured ? Icons.visibility_off : Icons.visibility,
+                                    color: Colors.grey,
+                                  ),
+                                  onPressed: _toggleObscure,
+                                )
+                              : null,
                         ),
                     onTap: () {
                       setState(() {
