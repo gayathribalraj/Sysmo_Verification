@@ -31,7 +31,7 @@
 
 ### Key Highlights
 
-- **Version**: 0.0.17
+- **Version**: 0.0.18
 - **Author**: Gayathri Balraj
 - **Created**: November 2024
 - **Repository**: [GitHub](https://github.com/gayathribalraj/Sysmo_Verification)
@@ -216,7 +216,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  sysmo_verification: ^0.0.17
+  sysmo_verification: ^0.0.18
 ```
 
 Run:
@@ -2910,7 +2910,7 @@ When reporting bugs, include:
 
 ```
 **Environment:**
-- Package version: 0.0.17
+- Package version: 0.0.18
 - Flutter version: 3.8.1
 - Platform: Android/iOS
 - Device: Pixel 5 / iPhone 12
@@ -2972,7 +2972,7 @@ SOFTWARE.
 
 ## Changelog
 
-### Version 0.0.17 (Current)
+### Version 0.0.18 (Current)
 - Initial public release
 - Support for 5 verification types (Aadhaar, PAN, Voter ID, GST, Passport)
 - Online and offline verification modes

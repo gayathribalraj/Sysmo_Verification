@@ -1,6 +1,6 @@
 name: sysmo_verification
 description: "A reusable KYC verification Flutter package"
-version: 0.0.17
+version: 0.0.18
 
 homepage: https://github.com/gayathribalraj/Sysmo_Verification
 repository: https://github.com/gayathribalraj/Sysmo_Verification
