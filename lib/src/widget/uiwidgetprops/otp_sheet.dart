@@ -2,6 +2,15 @@
   @author   : Gayathri
   @created  : 08/11/2025
   @desc     : Refactored OTP bottom sheet widget
+  
+  OTP Invalidation Logic:
+  - Each OTP generation (initial or resend) creates a unique transactionId
+  - When user clicks "Resend OTP", a new transactionId is generated
+  - The new transactionId replaces the old one (currentTransactionId)
+  - During verification, the transactionId is sent to the backend
+  - Backend validates that the OTP matches the latest transactionId
+  - If user tries to use an old OTP after resend, verification will fail
+  - This ensures only the most recent OTP can be used
 */
 
 import 'dart:async';
@@ -23,6 +32,7 @@ class OtpSheet extends StatefulWidget {
   final String aadharvaultApiurl;
   final String otpGenerateAssetPath;
   final String otpGenerateApiUrl;
+  final String? initialTransactionId;
 
   const OtpSheet({
     super.key,
@@ -38,6 +48,7 @@ class OtpSheet extends StatefulWidget {
     required this.aadharvaultApiurl,
     required this.otpGenerateAssetPath,
     required this.otpGenerateApiUrl,
+    this.initialTransactionId,
   });
 
   @override
@@ -51,6 +62,9 @@ class _OtpSheetState extends State<OtpSheet> {
   late ValueNotifier<bool> isResending;
   late ValueNotifier<int> otpFieldKey;
   Timer? _timer;
+  Timer? _expiryTimer;
+  String? currentTransactionId; // Track current valid transaction ID
+  bool _hasShownExpiryAlert = false;
 
   // Theme colors
   static const Color _primaryColor = Color(0xFF009688);
@@ -62,10 +76,12 @@ class _OtpSheetState extends State<OtpSheet> {
     super.initState();
     otpPin = '';
     isLoading = ValueNotifier<bool>(false);
-    resendTimer = ValueNotifier<int>(30);
+    resendTimer = ValueNotifier<int>(60);
     isResending = ValueNotifier<bool>(false);
     otpFieldKey = ValueNotifier<int>(0);
+    currentTransactionId = widget.initialTransactionId; // Initialize with first OTP transaction ID
     _startResendTimer();
+    _startExpiryTimer();
   }
 
   void _resetOtpField() {
@@ -73,8 +89,9 @@ class _OtpSheetState extends State<OtpSheet> {
     otpFieldKey.value++;
   }
 
+  /// Starts or restarts the 60-second resend timer
   void _startResendTimer() {
-    resendTimer.value = 30;
+    resendTimer.value = 60;
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (resendTimer.value > 0) {
@@ -85,6 +102,36 @@ class _OtpSheetState extends State<OtpSheet> {
     });
   }
 
+  /// Starts 60-second OTP expiry timer and shows alert when expired
+  void _startExpiryTimer() {
+    _hasShownExpiryAlert = false;
+    _expiryTimer?.cancel();
+    _expiryTimer = Timer(const Duration(seconds: 60), () {
+      if (mounted && !_hasShownExpiryAlert && !isLoading.value) {
+        _hasShownExpiryAlert = true;
+        _resetOtpField();
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => Dialog(
+            backgroundColor: Colors.transparent,
+            child: SysmoAlert.warning(
+              message: 'OTP Expired',
+              detailMessage: 'Your OTP has expired after 60 seconds. Please click Resend to get a new OTP.',
+              buttonText: 'OK',
+              onButtonPressed: () {
+                Navigator.pop(dialogContext);
+              },
+            ),
+          ),
+        );
+      }
+    });
+  }
+
+  /// Handles OTP resend functionality
+  /// Generates new OTP and updates transaction ID (invalidates previous OTP)
+  
   Future<void> _handleResendOtp() async {
     if (isResending.value) return;
     if (!mounted) return;
@@ -111,9 +158,18 @@ class _OtpSheetState extends State<OtpSheet> {
       final otpGeneration = responseData['OtpGeneration'] ?? responseData;
 
       if (otpGeneration != null && otpGeneration['ErrorCode'] == '000') {
+        // Update transaction ID for new OTP - this invalidates the old OTP
+        final newTransactionId = otpGeneration['transactionId'];
+        if (newTransactionId != null) {
+          currentTransactionId = newTransactionId.toString();
+          debugPrint("OTP Resend Success - New TransactionId: $currentTransactionId");
+          debugPrint("Previous OTP is now INVALID");
+        }
+        
         debugPrint("OTP Resend Success");
         isResending.value = false;
         _startResendTimer();
+        _startExpiryTimer(); // Restart expiry timer for new OTP
         _resetOtpField();
 
         if (!mounted) return;
@@ -176,6 +232,7 @@ class _OtpSheetState extends State<OtpSheet> {
   @override
   void dispose() {
     _timer?.cancel();
+    _expiryTimer?.cancel();
     isLoading.dispose();
     resendTimer.dispose();
     isResending.dispose();
@@ -183,7 +240,29 @@ class _OtpSheetState extends State<OtpSheet> {
     super.dispose();
   }
 
+  /// Handles OTP verification with transaction ID validation
+  /// Only accepts OTP matching the current (latest) transaction ID
   Future<void> _handleOtpVerification() async {
+    // Check if timer has expired
+    if (resendTimer.value == 0) {
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: SysmoAlert.warning(
+            message: 'OTP Expired',
+            detailMessage: 'Your OTP has expired. Please click Resend to get a new OTP.',
+            buttonText: 'OK',
+            onButtonPressed: () {
+              Navigator.pop(dialogContext);
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
     if (otpPin.isEmpty || otpPin.length != 6) {
       isLoading.value = false;
       await showDialog(
@@ -207,13 +286,16 @@ class _OtpSheetState extends State<OtpSheet> {
     try {
       // await Future.delayed(const Duration(seconds: 1));
 
-      // Build OTP verification request
+      // Build OTP verification request with transaction ID
       final requestBody = {
         'otp': otpPin,
         'uid': widget.aadhaarNumber,
         'uniqueId': widget.leadId,
         'token': widget.token,
+        if (currentTransactionId != null) 'transactionId': currentTransactionId, // Include transaction ID to validate against latest OTP
       };
+
+      debugPrint("OTP Verification Request - TransactionId: $currentTransactionId");
 
       final response = await KYCService().verify(
         isOffline: widget.url.isEmpty ? true : widget.isOffline,
@@ -423,6 +505,16 @@ class _OtpSheetState extends State<OtpSheet> {
           debugPrint("OTP Verification Failed");
           debugPrint("ErrorCode: $errorCode");
           debugPrint("ErrorStatus: $errorStatus");
+          debugPrint("TransactionId used: $currentTransactionId");
+          
+          // Check if error is due to old/expired OTP
+          String errorMessage = "${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}";
+          String detailMessage = "ErrorStatus: $errorStatus, ErrorCode: $errorCode";
+          
+          if (errorCode != '000') {
+            errorMessage = "OTP Verification Failed";
+            detailMessage = "ErrorStatus: $errorStatus, ErrorCode: $errorCode. The OTP may be invalid or expired.";
+          }
 
           isLoading.value = false;
           _resetOtpField();
@@ -434,11 +526,9 @@ class _OtpSheetState extends State<OtpSheet> {
               builder: (dialogcontext) => Dialog(
                 backgroundColor: Colors.transparent,
                 child: SysmoAlert.failure(
-                  detailMessage:
-                      "ErrorStatus: $errorStatus, ErrorCode: $errorCode",
-                  message:
-                      "${ConstantVariable.otpString} ${ConstantVariable.verificationFaildString}",
-                  viewButtonText: "View",
+                  message: errorMessage,
+                  detailMessage: detailMessage,
+                  viewButtonText: "OK",
                   onButtonPressed: () {
                     Navigator.pop(dialogcontext);
                   },
@@ -857,6 +947,7 @@ Future<dynamic> showOtpBottomSheet(
   required String aadharvaultApiurl,
   required String otpGenerateAssetPath,
   required String otpGenerateApiUrl,
+  String? transactionId, // Add transaction ID parameter
 }) async {
   return await showModalBottomSheet(
     context: context,
@@ -881,6 +972,7 @@ Future<dynamic> showOtpBottomSheet(
         aadharvaultApiurl: aadharvaultApiurl,
         otpGenerateAssetPath: otpGenerateAssetPath,
         otpGenerateApiUrl: otpGenerateApiUrl,
+        initialTransactionId: transactionId, // Pass transaction ID
       ),
     ),
   );

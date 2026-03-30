@@ -164,7 +164,7 @@ class _ConsoultFormState extends State<ConsentForm> {
                             child: Row(
                               children: [
                                 Icon(
-                                  Icons.gavel_rounded,
+                                  Icons.verified_user_outlined,
                                   color: _primaryColor,
                                   size: 24,
                                 ),
@@ -187,25 +187,34 @@ class _ConsoultFormState extends State<ConsentForm> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildIntroText(
-                                  "The following definitions apply throughout this Agreement unless otherwise stated:",
+                                Text(
+                                  'I voluntarily give my consent to Ujjivan Small Finance Bank Ltd. ("the Bank") and/or operators of the Bank to use my Aadhaar data/identity information/the physical copy of Aadhaar Card/physical e-Aadhaar/masked Aadhaar/Virtual ID/offline electronic Aadhaar xml as issued by Unique Identification Authority of India ("UIDAI") for doing Aadhar based e-KYC authentication/Biometric authentication/OTP authentication/Face authentication/Iris authentication with UIDAI for establishing my identity, in the manner acceptable as per UIDAI guidelines or under any Act or Law in force from time to time, for the purpose of processing instructions with the Bank or for processing my request for vehicle loan (including for getting my demographic information), subject to the provisions of the applicable Statutes/Regulations.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    height: 1.6,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                  textAlign: TextAlign.justify,
                                 ),
                                 const SizedBox(height: 16),
-                                _buildTermItem(
-                                  'a',
-                                  'Any expression, which has not been defined in this Agreement but is defined in the General Clauses Act, 1897 shall have the same meaning thereof.',
+                                Text(
+                                  'I am aware that my Aadhaar data/identity information/the physical copy of Aadhaar Card/physical e-Aadhaar/masked Aadhaar/Virtual ID/offline electronic Aadhaar xml will be stored by the Bank only by complying with the legal, regulatory and best practice business requirements.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    height: 1.6,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                  textAlign: TextAlign.justify,
                                 ),
-                                _buildTermItem(
-                                  'b',
-                                  'The reference to masculine gender shall be deemed to include reference to feminine gender and vice versa. The meaning of defined terms shall be equally applicable to both the singular and plural forms of the terms defined.',
-                                ),
-                                _buildTermItem(
-                                  'c',
-                                  'The word herein hereto, hereunder and the like mean and refer to this Agreement or any other document as a whole and not merely to the specific article, section, subsection, paragraph or clause in which the respective word appears.',
-                                ),
-                                _buildTermItem(
-                                  'd',
-                                  'The words including and include shall be deemed to be followed by the words without limitation.',
+                                const SizedBox(height: 16),
+                                Text(
+                                  'I am aware about other modes available for establishing my identity, i.e. offline verification of Aadhaar, use of passport or any other Officially Valid Document ("OVD"). The consent and purpose of collecting the identity information have been explained to me in vernacular language known to me.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    height: 1.6,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                  textAlign: TextAlign.justify,
                                 ),
                               ],
                             ),
@@ -298,60 +307,6 @@ class _ConsoultFormState extends State<ConsentForm> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Builds the introduction text widget
-  Widget _buildIntroText(String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 14,
-        height: 1.5,
-        color: Colors.grey.shade700,
-        fontStyle: FontStyle.italic,
-      ),
-    );
-  }
-
-  /// Builds a term item with letter indicator
-  Widget _buildTermItem(String letter, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: _primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                letter,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: _primaryColor,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.5,
-                color: Colors.grey.shade800,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -502,6 +457,7 @@ class _ConsoultFormState extends State<ConsentForm> {
             aadharvaultApiurl: widget.aadharvaultApiurl,
             otpGenerateAssetPath: widget.assetPath,
             otpGenerateApiUrl: widget.url,
+            transactionId: transactionId?.toString(), // Pass initial transaction ID
           );
 
           debugPrint("OTP Verification Response: $optionOTPSheet");
