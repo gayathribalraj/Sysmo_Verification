@@ -35,9 +35,11 @@ class KYCService extends KycVerification{
 }
 
 class KycVerification with VerificationMixin {
+  @override
   Future<Response> verifyOffline(String assetPath) =>
       OfflineVerificationHandler.loadData(assetPath);
 
+  @override
   Future<Response> verifyOnline(String url) async => ApiClient().callGet(url);
 
   Future<Response> verifyOnlineWithData(String url, dynamic data) async => 
