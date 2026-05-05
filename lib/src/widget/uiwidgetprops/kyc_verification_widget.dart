@@ -354,11 +354,16 @@ class _KYCTextBoxState extends State<KYCTextBox> {
           if (refNum != null && refNum.toString().isNotEmpty) {
             debugPrint("aadharRefNum found in response: $refNum");
             aadhaarRefNumber = refNum.toString();
-            _handleVaultVerificationSuccess(
-              otpValidation is Map<String, dynamic> ? otpValidation : {},
-              vaultData is Map<String, dynamic> ? vaultData : {},
-              aadhaarRefNumber!,
-            );
+            if (aadhaarRefNumber!.isNotEmpty &&
+                widget.usedAadhaarRefNumbers!.contains(aadhaarRefNumber)) {
+              _handleVerificationError('${ConstantVariable.duplicateAadhaar}');
+            } else {
+              _handleVaultVerificationSuccess(
+                otpValidation is Map<String, dynamic> ? otpValidation : {},
+                vaultData is Map<String, dynamic> ? vaultData : {},
+                aadhaarRefNumber!,
+              );
+            }
           } else {
             // Fallback: run vault operations here if not done in ConsentForm
             debugPrint(
@@ -469,12 +474,23 @@ class _KYCTextBoxState extends State<KYCTextBox> {
       if ((errorCode == '000' || errorCode == 0) && refNum != null) {
         aadhaarRefNumber = refNum.toString();
 
-        _handleVaultVerificationSuccess(
-          otpValidation,
-          vaultLookup is Map<String, dynamic> ? vaultLookup : {},
-          aadhaarRefNumber!,
-        );
-        return;
+        if (widget.usedAadhaarRefNumbers!.isNotEmpty &&
+            widget.usedAadhaarRefNumbers!.contains(aadhaarRefNumber)) {
+          debugPrint(
+            "Aadhaar reference number $aadhaarRefNumber has already been used. Marking verification as failed.",
+          );
+          _handleVerificationError(
+            'Aadhaar ${ConstantVariable.duplicateAadhaar}',
+          );
+          return;
+        } else {
+          _handleVaultVerificationSuccess(
+            otpValidation,
+            vaultLookup is Map<String, dynamic> ? vaultLookup : {},
+            aadhaarRefNumber!,
+          );
+          return;
+        }
       }
 
       if (errorCode == '2' || errorCode == 2) {
@@ -707,5 +723,4 @@ class _KYCTextBoxState extends State<KYCTextBox> {
       VerificationType.passport => TextInputType.text,
     };
   }
-
 }
