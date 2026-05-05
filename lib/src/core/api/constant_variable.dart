@@ -28,7 +28,7 @@ class ConstantVariable {
   //VerificationHandler Strings
   static const String noDataProviderString =
       "No valid data source provided for verification";
-
+  static const String duplicateAadhaar = 'Aadhaar number already exists';
   static const String verificationFaildString = "Verification Failed";
   static const String verifiedSuccessfullyString = "Verified Successfully";
   static const String verifiedString = "Verified";
